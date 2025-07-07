@@ -2,9 +2,11 @@ package com.pokeapi.backend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import com.pokeapi.backend.dto.PokemonDTO;
 import com.pokeapi.backend.repository.PokemonRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import com.pokeapi.backend.entity.Pokemon;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -20,7 +22,6 @@ import org.slf4j.LoggerFactory;
 // WebClient: HTTP 클라이언트 (WebClientConfig에서 Bean 제공)
 // ObjectMapper: JSON 변환 (Spring Boot 자동 설정)
 // Logger: SLF4J 로깅 (Spring Boot 기본 로깅)
-
 
 @Service
 public class PokemonService {
@@ -42,14 +43,14 @@ public class PokemonService {
      * @param name 포켓몬 이름
      * @return PokemonDTO 또는 null
      */
-    public PokemonDTO searchPokemonName(String name){
+    public PokemonDTO searchPokemonName(String name) {
         // 1단계: DB에서 캐시된 데이터 조회 (빠른 응답)
         Optional<Pokemon> pokemon = pokemonRepository.findByName(name);
-        
+
         if (pokemon.isPresent()) {
-            return convertToDTO(pokemon.get());  // 캐시 히트: DB에서 바로 반환
+            return convertToDTO(pokemon.get()); // 캐시 히트: DB에서 바로 반환
         }
-        
+
         // 2단계: 캐시 미스 시 외부 API 호출 (실시간 데이터)
         try {
             logger.info("DB에 {} 정보가 없어서 외부 API 호출 시작", name);
@@ -63,7 +64,7 @@ public class PokemonService {
         } catch (Exception e) {
             logger.error("외부 API 호출 실패 - 포켓몬: {}, 오류: {}", name, e.getMessage(), e);
         }
-        
+
         // 4단계: 모든 소스에서 데이터를 찾을 수 없는 경우
         logger.warn("포켓몬 '{}'을(를) 찾을 수 없습니다. DB에도 없고 외부 API에서도 가져올 수 없음", name);
         return null;
@@ -74,16 +75,120 @@ public class PokemonService {
      * 
      * @return 전체 포켓몬 DTO 리스트
      */
-    public List<PokemonDTO> getAllPokemons(){
+    public List<PokemonDTO> getAllPokemons() {
         List<Pokemon> pokemons = pokemonRepository.findAll();
         // 함수형 프로그래밍: Entity → DTO 변환을 스트림으로 처리
         return pokemons.stream()
-            .map(this::convertToDTO)  // 메서드 레퍼런스로 변환 함수 적용
-            .collect(Collectors.toList());  // 스트림 결과를 리스트로 수집
+                .map(this::convertToDTO) // 메서드 레퍼런스로 변환 함수 적용
+                .collect(Collectors.toList()); // 스트림 결과를 리스트로 수집
+    }
+
+    /**
+     * 고급 검색 기능 - 다양한 조건으로 포켓몬 검색
+     * 
+     * @param type       타입 (예: "Electric", "Fire")
+     * @param minHeight  최소 키 (cm)
+     * @param maxHeight  최대 키 (cm)
+     * @param minWeight  최소 몸무게 (g)
+     * @param maxWeight  최대 몸무게 (g)
+     * @param minAttack  최소 공격력
+     * @param maxAttack  최대 공격력
+     * @param minDefense 최소 방어력
+     * @param maxDefense 최대 방어력
+     * @param minHp      최소 HP
+     * @param maxHp      최대 HP
+     * @param minSpeed   최소 속도
+     * @param maxSpeed   최대 속도
+     * @return 조건에 맞는 포켓몬 리스트
+     */
+    public List<PokemonDTO> advancedSearch(
+            String type, Integer minHeight, Integer maxHeight,
+            Integer minWeight, Integer maxWeight,
+            Integer minAttack, Integer maxAttack,
+            Integer minDefense, Integer maxDefense,
+            Integer minHp, Integer maxHp,
+            Integer minSpeed, Integer maxSpeed) {
+
+        // 1단계: DB에서 모든 포켓몬 조회
+        List<Pokemon> allPokemons = pokemonRepository.findAll();
+
+        // 2단계: 스트림을 사용한 필터링 (함수형 프로그래밍)
+        return allPokemons.stream()
+                .map(this::convertToDTO) // Entity → DTO 변환
+                .filter(pokemon -> filterByType(pokemon, type)) // 타입 필터
+                .filter(pokemon -> filterByHeight(pokemon, minHeight, maxHeight)) // 키 필터
+                .filter(pokemon -> filterByWeight(pokemon, minWeight, maxWeight)) // 몸무게 필터
+                .filter(pokemon -> filterByStats(pokemon, minAttack, maxAttack, minDefense, maxDefense, minHp, maxHp,
+                        minSpeed, maxSpeed)) // 능력치 필터
+                .collect(Collectors.toList()); // 결과 수집
+    }
+
+    // Private Helper Methods for Advanced Search
+    private boolean filterByType(PokemonDTO pokemon, String type) {
+        if (type == null || type.trim().isEmpty())
+            return true;
+        return pokemon.getTypes() != null &&
+                pokemon.getTypes().stream()
+                        .anyMatch(t -> t.equalsIgnoreCase(type.trim()));
+    }
+
+    private boolean filterByHeight(PokemonDTO pokemon, Integer minHeight, Integer maxHeight) {
+        if (minHeight != null && pokemon.getHeight() < minHeight)
+            return false;
+        if (maxHeight != null && pokemon.getHeight() > maxHeight)
+            return false;
+        return true;
+    }
+
+    private boolean filterByWeight(PokemonDTO pokemon, Integer minWeight, Integer maxWeight) {
+        if (minWeight != null && pokemon.getWeight() < minWeight)
+            return false;
+        if (maxWeight != null && pokemon.getWeight() > maxWeight)
+            return false;
+        return true;
+    }
+
+    private boolean filterByStats(PokemonDTO pokemon,
+            Integer minAttack, Integer maxAttack,
+            Integer minDefense, Integer maxDefense,
+            Integer minHp, Integer maxHp,
+            Integer minSpeed, Integer maxSpeed) {
+
+        if (pokemon.getStats() == null)
+            return true;
+
+        // 능력치 맵 생성 (이름 → 수치)
+        Map<String, Integer> statsMap = pokemon.getStats().stream()
+                .collect(Collectors.toMap(
+                        stat -> stat.getName().toLowerCase(),
+                        PokemonDTO.StatDTO::getBaseStat));
+
+        // 각 능력치별 필터링
+        if (minAttack != null && statsMap.get("attack") != null && statsMap.get("attack") < minAttack)
+            return false;
+        if (maxAttack != null && statsMap.get("attack") != null && statsMap.get("attack") > maxAttack)
+            return false;
+
+        if (minDefense != null && statsMap.get("defense") != null && statsMap.get("defense") < minDefense)
+            return false;
+        if (maxDefense != null && statsMap.get("defense") != null && statsMap.get("defense") > maxDefense)
+            return false;
+
+        if (minHp != null && statsMap.get("hp") != null && statsMap.get("hp") < minHp)
+            return false;
+        if (maxHp != null && statsMap.get("hp") != null && statsMap.get("hp") > maxHp)
+            return false;
+
+        if (minSpeed != null && statsMap.get("speed") != null && statsMap.get("speed") < minSpeed)
+            return false;
+        if (maxSpeed != null && statsMap.get("speed") != null && statsMap.get("speed") > maxSpeed)
+            return false;
+
+        return true;
     }
 
     // Private Helper Methods
-    
+
     /**
      * 외부 PokéAPI에서 포켓몬 정보를 가져오는 메서드
      * 
@@ -102,7 +207,7 @@ public class PokemonService {
             // .bodyToMono(String.class) → 응답을 String 타입으로 받기
             // .block() → 비동기 요청을 동기로 변환 (응답이 올 때까지 기다림)
             String response = webClient.get()
-                .uri("https://pokeapi.co/api/v2/pokemon/{name}", name)
+                .uri("/pokemon/{name}", name)  // WebClientConfig에서 baseUrl이 설정되어 있음
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
@@ -113,8 +218,67 @@ public class PokemonService {
                 // objectMapper.readValue() → JSON을 Java 객체로 역직렬화
                 // response → PokéAPI에서 받은 JSON 문자열
                 // PokemonDTO.class → 변환할 타입
-                PokemonDTO pokemonDTO = objectMapper.readValue(response, PokemonDTO.class);
+                Map<String, Object> pokemonData = objectMapper.readValue(response, Map.class);
+                PokemonDTO pokemonDTO = new PokemonDTO();
                 
+                // 기본정보 매핑
+                pokemonDTO.setPokemonId((Integer)pokemonData.get("id"));
+                pokemonDTO.setName((String)pokemonData.get("name"));
+                pokemonDTO.setBaseExperience((Integer)pokemonData.get("base_experience");
+                pokemonDTO.setHeight((Integer)pokemonData.get("height"));
+                pokemonDTO.setWegiht((Integer)pokemonData.get("weight"));
+
+                // 스프라이트Url 매핑
+                Map<String, Object> sprites = (Map<String, Object>) pokemonData.get("sprites");
+                if (sprites != null) {
+                    pokemonDTO.setSpriteUrl((String) sprites.get("front_default"));
+                    pokemonDTO.setShinySpriteUrl((String) sprites.get("front_shint"));
+                }
+
+                // 타입 매핑
+                List<Map<String, Object>> types = (List<Map<String, Object>>) pokemonData.get("types");
+                List<String> typeNames = new ArrayList<>();
+
+                if (types != null) {
+                    for (Map<String, Object> type : types) {
+                        Map<String, Object> typeInfo = (Map<String, Object>) type.get("type");
+                        typeNames.add((String) typeInfo.get("name"));
+                    }
+                }
+                pokemonDTO.setTypes(typeNames);
+
+                // 능력치 정보 매핑
+                List<Map<String, Object>> stats = (List<Map<Stirng, Object>>) pokemonData.get("stats");
+                List<PokemonDTO.StatDTO> statDTOs = new ArrayList<>();
+                
+                if (stats != null) {
+                    for (Map<String, Object> stat : stats) {
+                        PokemonDTO.StatDTO statDTO = new PokemonDTO.StatDTO();
+                        statDTO.setBaseStat((Integer) stat.get("base_stat"));
+                        statDTO.setEffort((Integer) stat.get("effort"));
+
+                        Map<String, Object> statInfo = (Map<String, Object>) stat.get("stat");
+                        statDTO.setName((String) statInfo.get("name"));
+
+                        statDTOs.add(statDTO);
+                    }
+                }
+                pokemonDTO.setStats(statDTOs);
+
+                //특성정보 매핑
+                List<Map<String, Object>> abilities = (List<Map<String, Object>>) pokemonData.get("abilities");
+                List<String> abilityNames = new ArrayList<>();
+
+                if (abilities != null) {
+                    for (Map<String, Object> ability : abilities) {
+                        Map<String, Object> abilityInfo = (Map<String, Object>) ability.get("ability");
+                        abilityNames.add((String) abilityInfo.get("name"));
+                    }
+                }
+                pokemonDTO.setAbilities(abilityNames);
+
+                // 설명은 임시로 빈문자열 설정 별도 api 호출 필요
+                pokemonDTO.setDescription("");
                 // 5단계: 성공 로그 기록
                 logger.info("PokéAPI에서 {} 정보 성공적으로 가져옴", name);
                 
@@ -133,13 +297,14 @@ public class PokemonService {
         // 8단계: 실패 시 null 반환 (에러 발생 또는 응답이 null인 경우)
         return null;
     }
+
     /**
      * Entity를 DTO로 변환 (데이터 계층 분리)
      * 
      * @param entity 데이터베이스 엔티티
      * @return API 응답용 DTO
      */
-    private PokemonDTO convertToDTO(Pokemon entity){
+    private PokemonDTO convertToDTO(Pokemon entity) {
         PokemonDTO dto = new PokemonDTO();
         dto.setName(entity.getName());
         dto.setHeight(entity.getHeight());
@@ -159,7 +324,7 @@ public class PokemonService {
      * @param dto API 요청/응답용 DTO
      * @return 데이터베이스 저장용 엔티티
      */
-    private Pokemon convertToEntity(PokemonDTO dto){
+    private Pokemon convertToEntity(PokemonDTO dto) {
         Pokemon pokemon = new Pokemon();
         pokemon.setName(dto.getName());
         pokemon.setHeight(dto.getHeight());
@@ -179,9 +344,9 @@ public class PokemonService {
      * @param dto 저장할 포켓몬 DTO
      * @return 저장된 엔티티 (ID 포함)
      */
-    private Pokemon savePokemon(PokemonDTO dto){
-        Pokemon pokemon = convertToEntity(dto);  // DTO → Entity 변환
-        return pokemonRepository.save(pokemon);  // JPA를 통한 DB 저장
+    private Pokemon savePokemon(PokemonDTO dto) {
+        Pokemon pokemon = convertToEntity(dto); // DTO → Entity 변환
+        return pokemonRepository.save(pokemon); // JPA를 통한 DB 저장
     }
 
     /**
@@ -190,90 +355,90 @@ public class PokemonService {
      * @param list 변환할 String 리스트
      * @return JSON 문자열 또는 "[]" (에러 시)
      */
-    private String convertListToJson(List<String> list){
+    private String convertListToJson(List<String> list) {
         try {
-            return objectMapper.writeValueAsString(list);  // Jackson ObjectMapper 사용
+            return objectMapper.writeValueAsString(list); // Jackson ObjectMapper 사용
         } catch (Exception e) {
-            return "[]";  // 에러 시 빈 배열 JSON 반환
+            return "[]"; // 에러 시 빈 배열 JSON 반환
         }
     }
-    
+
     /**
      * JSON 문자열을 String 리스트로 역직렬화 (DB 조회용)
      * 
      * @param json JSON 문자열
      * @return String 리스트 또는 빈 리스트 (에러 시)
      */
-    private List<String> convertJsonToList(String json){
+    private List<String> convertJsonToList(String json) {
         try {
             // 제네릭 타입 정보를 명시적으로 생성 (List<String>)
-            return objectMapper.readValue(json, 
-                objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+            return objectMapper.readValue(json,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
         } catch (Exception e) {
-            return new ArrayList<>();  // 에러 시 빈 리스트 반환
+            return new ArrayList<>(); // 에러 시 빈 리스트 반환
         }
     }
-    
+
     /**
      * StatDTO 리스트를 JSON 문자열로 직렬화
      * 
      * @param stats StatDTO 리스트
      * @return JSON 문자열 또는 "[]" (에러 시)
      */
-    private String convertStatsToJson(List<PokemonDTO.StatDTO> stats){
+    private String convertStatsToJson(List<PokemonDTO.StatDTO> stats) {
         try {
             return objectMapper.writeValueAsString(stats);
         } catch (Exception e) {
             return "[]";
         }
     }
-    
+
     /**
      * JSON 문자열을 StatDTO 리스트로 역직렬화
      * 
      * @param json JSON 문자열
      * @return StatDTO 리스트 또는 빈 리스트 (에러 시)
      */
-    private List<PokemonDTO.StatDTO> convertJsonToStats(String json){
+    private List<PokemonDTO.StatDTO> convertJsonToStats(String json) {
         try {
             // 복잡한 제네릭 타입 (List<StatDTO>) 정보 생성
-            return objectMapper.readValue(json, 
-                objectMapper.getTypeFactory().constructCollectionType(List.class, PokemonDTO.StatDTO.class));
+            return objectMapper.readValue(json,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, PokemonDTO.StatDTO.class));
         } catch (Exception e) {
             return new ArrayList<>();
         }
     }
+
     /**
      * 포켓몬 이름으로 스프라이트 URL 생성
      * 
      * @param name 포켓몬 이름
      * @return GitHub 스프라이트 URL 또는 빈 문자열 (에러 시)
      */
-    private String generateSpriteUrl(String name){
+    private String generateSpriteUrl(String name) {
         try {
             // String.format으로 URL 템플릿에 파라미터 삽입
-            return String.format("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/%s.png", name);
+            return String.format("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/%s.png",
+                    name);
         } catch (Exception e) {
             return "";
         }
     }
-    
+
     /**
      * 포켓몬 ID로 샤이니 스프라이트 URL 생성
      * 
      * @param pokemonId 포켓몬 ID
      * @return GitHub 샤이니 스프라이트 URL 또는 빈 문자열 (에러 시)
      */
-    private String generateShinySpriteUrl(Integer pokemonId){
+    private String generateShinySpriteUrl(Integer pokemonId) {
         try {
             // %d는 정수형 파라미터, %s는 문자열 파라미터
-            return String.format("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/%d.png", pokemonId);
+            return String.format(
+                    "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/%d.png", pokemonId);
         } catch (Exception e) {
             return "";
         }
     }
-
-
-
 
 }
