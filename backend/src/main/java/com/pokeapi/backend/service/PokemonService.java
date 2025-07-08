@@ -309,6 +309,7 @@ public class PokemonService {
     private PokemonDTO convertToDTO(Pokemon entity) {
         PokemonDTO dto = new PokemonDTO();
         dto.setName(entity.getName());
+        dto.setKoreanName(entity.getKoreanName());
         dto.setHeight(entity.getHeight());
         dto.setWeight(entity.getWeight());
         // JSON 문자열을 리스트로 역직렬화 (DB 저장 형태 → API 응답 형태)
@@ -329,6 +330,7 @@ public class PokemonService {
     private Pokemon convertToEntity(PokemonDTO dto) {
         Pokemon pokemon = new Pokemon();
         pokemon.setName(dto.getName());
+        pokemon.setKoreanName(dto.getKoreanName());
         pokemon.setHeight(dto.getHeight());
         pokemon.setWeight(dto.getWeight());
         // 리스트를 JSON 문자열로 직렬화 (API 응답 형태 → DB 저장 형태)

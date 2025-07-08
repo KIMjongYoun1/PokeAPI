@@ -3,6 +3,7 @@ package com.pokeapi.backend.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
+import java.util.List;
 import com.pokeapi.backend.entity.Pokemon;
 
 
@@ -26,5 +27,11 @@ public interface PokemonRepository extends JpaRepository<Pokemon, Long> {
     
     // PokeAPI ID 존재 여부 확인
     boolean existsByPokemonId(Integer pokemonId);
+
+    // 한글 이름 검색
+    Optional<Pokemon> findByKoreanName(String koreanName);
+
+    // 한글 이름 부분 검색
+    List<Pokemon> findByKoreanNameContaining(String koreanName);
 
 }

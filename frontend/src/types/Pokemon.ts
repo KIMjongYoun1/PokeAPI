@@ -17,6 +17,7 @@ export interface PokemonDTO {
     id: number;                    // 데이터베이스 내부 ID (자동 생성)
     pokemonId: number;             // 포켓몬 도감 번호 (1~151, 1세대 기준)
     name: string;                  // 포켓몬 이름 (영문 소문자, 예: "pikachu")
+    koreanName: string;            // 포켓몬 한글 이름 (예: "피카츄")
     baseExperience: number;        // 기본 경험치 (포켓몬을 잡았을 때 얻는 경험치)
     height: number;                // 키 (cm 단위, 실제 표시시 10으로 나누어 m 단위로 변환)
     weight: number;                // 몸무게 (g 단위, 실제 표시시 10으로 나누어 kg 단위로 변환)

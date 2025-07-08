@@ -48,6 +48,10 @@ CREATE INDEX IF NOT EXISTS idx_pokemon_name ON pokemon(name);
 CREATE INDEX IF NOT EXISTS idx_pokemon_type_name ON pokemon_type(type_name);
 CREATE INDEX IF NOT EXISTS idx_pokemon_stat_name ON pokemon_stat(stat_name);
 
+-- 컬럼추가
+ALTER TABLE pokemon ADD COLUMN korean_name VARCHAR(255);
+SELECT DATABASE();
+
 -- 테이블 생성 확인
 \dt
 

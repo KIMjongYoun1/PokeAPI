@@ -11,6 +11,7 @@ public class PokemonDTO {
     private Long id;
     private Integer pokemonId;
     private String name;
+    private String koreanName;
     private Integer baseExperience;
     private Integer height;
     private Integer weight;
@@ -26,6 +27,7 @@ public class PokemonDTO {
     public Long getId() { return id; }
     public Integer getPokemonId() { return pokemonId; }
     public String getName() { return name; }
+    public String getKoreanName() { return koreanName; }
     public Integer getBaseExperience() { return baseExperience; }
     public Integer getHeight() { return height; }
     public Integer getWeight() { return weight; }
@@ -41,6 +43,7 @@ public class PokemonDTO {
     public void setId(Long id) { this.id = id; }
     public void setPokemonId(Integer pokemonId) { this.pokemonId = pokemonId; }
     public void setName(String name) { this.name = name; }
+    public void setKoreanName(String koreanName) { this.koreanName = koreanName; }
     public void setBaseExperience(Integer baseExperience) { this.baseExperience = baseExperience; }
     public void setHeight(Integer height) { this.height = height; }
     public void setWeight(Integer weight) { this.weight = weight; }

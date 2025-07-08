@@ -37,6 +37,9 @@ public class Pokemon {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "korean_name", nullable = false)
+    private String koreanName;
+
     @Column(name = "base_experience", nullable = false)
     private Integer baseExperience;
 
@@ -90,6 +93,7 @@ public class Pokemon {
     public Long getId() { return id; }
     public Integer getPokemonId() { return pokemonId; }
     public String getName() { return name; }
+    public String getKoreanName() { return koreanName;}
     public Integer getBaseExperience() { return baseExperience; }
     public Integer getHeight() { return height; }
     public Integer getWeight() { return weight; }
@@ -107,6 +111,7 @@ public class Pokemon {
     public void setId(Long id) { this.id = id; }
     public void setPokemonId(Integer pokemonId) { this.pokemonId = pokemonId; }
     public void setName(String name) { this.name = name; }
+    public void setKoreanName(String koreanName) {this.koreanName = koreanName;}
     public void setBaseExperience(Integer baseExperience) { this.baseExperience = baseExperience; }
     public void setHeight(Integer height) { this.height = height; }
     public void setWeight(Integer weight) { this.weight = weight; }
