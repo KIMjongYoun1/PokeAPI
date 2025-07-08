@@ -1,8 +1,0 @@
-/Users/ryankim/PokeAPI/PokeAPI/backend/src/main/java/com/pokeapi/backend/repository/PokemonRepository.java
-/Users/ryankim/PokeAPI/PokeAPI/backend/src/main/java/com/pokeapi/backend/service/PokemonService.java
-/Users/ryankim/PokeAPI/PokeAPI/backend/src/main/java/com/pokeapi/backend/PokeApiApplication.java
-/Users/ryankim/PokeAPI/PokeAPI/backend/src/main/java/com/pokeapi/backend/controller/RequestController.java
-/Users/ryankim/PokeAPI/PokeAPI/backend/src/main/java/com/pokeapi/backend/config/WebClientConfig.java
-/Users/ryankim/PokeAPI/PokeAPI/backend/src/main/java/com/pokeapi/backend/entity/Pokemon.java
-/Users/ryankim/PokeAPI/PokeAPI/backend/src/main/java/com/pokeapi/backend/dto/PokemonDTO.java
-/Users/ryankim/PokeAPI/PokeAPI/backend/src/main/java/com/pokeapi/backend/controller/PokemonController.java

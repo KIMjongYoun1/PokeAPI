@@ -1,9 +1,0 @@
-com/pokeapi/backend/controller/PokemonController.class
-com/pokeapi/backend/dto/PokemonDTO.class
-com/pokeapi/backend/dto/PokemonDTO$StatDTO.class
-com/pokeapi/backend/controller/RequestController.class
-com/pokeapi/backend/service/PokemonService.class
-com/pokeapi/backend/PokeApiApplication.class
-com/pokeapi/backend/entity/Pokemon.class
-com/pokeapi/backend/config/WebClientConfig.class
-com/pokeapi/backend/repository/PokemonRepository.class

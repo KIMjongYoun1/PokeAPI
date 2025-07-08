@@ -195,11 +195,12 @@ public class PokemonService {
      * @param name 포켓몬 이름 (예: "pikachu", "bulbasaur")
      * @return PokemonDTO 객체 (성공 시) 또는 null (실패 시)
      */
+    @SuppressWarnings("unchecked")
     private PokemonDTO callPokeApi(String name) {
         try {
             // 1단계: API 호출 시작 로그 기록
             logger.info("PokéAPI 호출 시작: {}", name);
-            
+
             // 2단계: WebClient를 사용한 HTTP GET 요청 생성
             // webClient.get() → HTTP GET 요청 빌더 생성
             // .uri() → 요청 URL 설정 (중괄호는 파라미터 자리)
@@ -207,11 +208,11 @@ public class PokemonService {
             // .bodyToMono(String.class) → 응답을 String 타입으로 받기
             // .block() → 비동기 요청을 동기로 변환 (응답이 올 때까지 기다림)
             String response = webClient.get()
-                .uri("/pokemon/{name}", name)  // WebClientConfig에서 baseUrl이 설정되어 있음
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
-            
+                    .uri("/pokemon/{name}", name) // WebClientConfig에서 baseUrl이 설정되어 있음
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
             // 3단계: 응답이 null이 아닌지 확인 (유효한 응답인지 검증)
             if (response != null) {
                 // 4단계: JSON 문자열을 PokemonDTO 객체로 변환
@@ -220,13 +221,13 @@ public class PokemonService {
                 // PokemonDTO.class → 변환할 타입
                 Map<String, Object> pokemonData = objectMapper.readValue(response, Map.class);
                 PokemonDTO pokemonDTO = new PokemonDTO();
-                
+
                 // 기본정보 매핑
-                pokemonDTO.setPokemonId((Integer)pokemonData.get("id"));
-                pokemonDTO.setName((String)pokemonData.get("name"));
-                pokemonDTO.setBaseExperience((Integer)pokemonData.get("base_experience");
-                pokemonDTO.setHeight((Integer)pokemonData.get("height"));
-                pokemonDTO.setWegiht((Integer)pokemonData.get("weight"));
+                pokemonDTO.setPokemonId((Integer) pokemonData.get("id"));
+                pokemonDTO.setName((String) pokemonData.get("name"));
+                pokemonDTO.setBaseExperience((Integer) pokemonData.get("base_experience"));
+                pokemonDTO.setHeight((Integer) pokemonData.get("height"));
+                pokemonDTO.setWeight((Integer) pokemonData.get("weight"));
 
                 // 스프라이트Url 매핑
                 Map<String, Object> sprites = (Map<String, Object>) pokemonData.get("sprites");
@@ -248,9 +249,9 @@ public class PokemonService {
                 pokemonDTO.setTypes(typeNames);
 
                 // 능력치 정보 매핑
-                List<Map<String, Object>> stats = (List<Map<Stirng, Object>>) pokemonData.get("stats");
+                List<Map<String, Object>> stats = (List<Map<String, Object>>) pokemonData.get("stats");
                 List<PokemonDTO.StatDTO> statDTOs = new ArrayList<>();
-                
+
                 if (stats != null) {
                     for (Map<String, Object> stat : stats) {
                         PokemonDTO.StatDTO statDTO = new PokemonDTO.StatDTO();
@@ -265,7 +266,7 @@ public class PokemonService {
                 }
                 pokemonDTO.setStats(statDTOs);
 
-                //특성정보 매핑
+                // 특성정보 매핑
                 List<Map<String, Object>> abilities = (List<Map<String, Object>>) pokemonData.get("abilities");
                 List<String> abilityNames = new ArrayList<>();
 
@@ -278,14 +279,15 @@ public class PokemonService {
                 pokemonDTO.setAbilities(abilityNames);
 
                 // 설명은 임시로 빈문자열 설정 별도 api 호출 필요
-                pokemonDTO.setDescription("");
+                String description = getPokemonDescription(name);
+                pokemonDTO.setDescription(description);
                 // 5단계: 성공 로그 기록
                 logger.info("PokéAPI에서 {} 정보 성공적으로 가져옴", name);
-                
+
                 // 6단계: 변환된 PokemonDTO 객체 반환
                 return pokemonDTO;
             }
-            
+
         } catch (Exception e) {
             // 7단계: 에러 발생 시 에러 로그 기록
             // logger.error() → 에러 레벨 로그
@@ -293,7 +295,7 @@ public class PokemonService {
             // e → 전체 스택 트레이스 (디버깅용)
             logger.error("PokéAPI 호출 실패 - 포켓몬: {}, 오류: {}", name, e.getMessage(), e);
         }
-        
+
         // 8단계: 실패 시 null 반환 (에러 발생 또는 응답이 null인 경우)
         return null;
     }
@@ -410,35 +412,63 @@ public class PokemonService {
     }
 
     /**
-     * 포켓몬 이름으로 스프라이트 URL 생성
+     * PokeAPI에서 포켓몬 설명을 가져오는 메서드
      * 
-     * @param name 포켓몬 이름
-     * @return GitHub 스프라이트 URL 또는 빈 문자열 (에러 시)
+     * @param name 포켓몬 이름(예: "pikacu", "bulbasaur")
+     * @return 포켓몬 설명 (한국어) 또는 빈 문자열(실패시)
      */
-    private String generateSpriteUrl(String name) {
+    @SuppressWarnings("unchecked")
+    private String getPokemonDescription(String name) {
         try {
-            // String.format으로 URL 템플릿에 파라미터 삽입
-            return String.format("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/%s.png",
-                    name);
-        } catch (Exception e) {
-            return "";
-        }
-    }
+            logger.info("Species API 호출 시작: {}", name);
 
-    /**
-     * 포켓몬 ID로 샤이니 스프라이트 URL 생성
-     * 
-     * @param pokemonId 포켓몬 ID
-     * @return GitHub 샤이니 스프라이트 URL 또는 빈 문자열 (에러 시)
-     */
-    private String generateShinySpriteUrl(Integer pokemonId) {
-        try {
-            // %d는 정수형 파라미터, %s는 문자열 파라미터
-            return String.format(
-                    "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/%d.png", pokemonId);
+            // 1단계 Species API 호출
+            String response = webClient.get()
+                    .uri("/pokemon-species/{name}", name)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            // 2단계: 응답이 null이 아닌지 확인
+            if (response != null) {
+                Map<String, Object> speciesData = objectMapper.readValue(response, Map.class);
+
+                // 3단계 flavor_text_entries 추출
+                List<Map<String, Object>> flavorTexts = (List<Map<String, Object>>) speciesData
+                        .get("flavor_text_entries");
+
+                if (flavorTexts != null) {
+                    String koDescription = null;
+                    String enDescription = null;
+
+                    for (Map<String, Object> flavorText : flavorTexts) {
+                        Map<String, Object> language = (Map<String, Object>) flavorText.get("language");
+                        if (language != null) {
+                            String languageName = (String) language.get("name");
+                            String text = (String) flavorText.get("flavor_text");
+
+                            if ("ko".equals(languageName)) {
+                                koDescription = text;
+                                break;
+                            } else if ("en".equals(languageName) && enDescription == null) {
+                                enDescription = text;
+                            }
+                        }
+                    }
+
+                    if (koDescription != null) {
+                        logger.info("Speccies API에서 {} 한국어 설명 가져옴 성공", name);
+                        return koDescription;
+                    } else if (enDescription != null) {
+                        logger.info("Speccies API에서 {} 영어 설명 가져옴 성공", name);
+                        return enDescription;
+                    }
+                }
+            }
         } catch (Exception e) {
-            return "";
+            logger.error("Species API 호출 실패 - 포켓몬: {}, 오류: {}", name, e.getMessage(), e);
         }
+        return "";
     }
 
 }
