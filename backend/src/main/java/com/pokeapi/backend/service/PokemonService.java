@@ -547,7 +547,7 @@ public class PokemonService {
         } catch (Exception e) {
             logger.error("타입별 포켓몬 조회 실패 : {}", e.getMessage(), e);
             return new ArrayList<>();
-            // TODO: handle exception
+            
         }
     }
     /**
