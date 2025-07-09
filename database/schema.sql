@@ -50,7 +50,10 @@ CREATE INDEX IF NOT EXISTS idx_pokemon_stat_name ON pokemon_stat(stat_name);
 
 -- 컬럼추가
 ALTER TABLE pokemon ADD COLUMN korean_name VARCHAR(255);
-SELECT DATABASE();
+SELECT DATABASE();  
+Select * from pokemon;
+
+ALTER TABLE pokemon ADD COLUMN korean_types TEXT;
 
 -- 테이블 생성 확인
 \dt

@@ -15,6 +15,10 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.Set;
+import java.util.HashMap;
+
+    
 
 // ===== Spring Boot 자동 제공 기능들 =====
 // @Service: Spring Bean으로 등록, 비즈니스 로직 담당
@@ -45,7 +49,7 @@ public class PokemonService {
      */
     public PokemonDTO searchPokemonName(String name) {
         // 1단계: DB에서 캐시된 데이터 조회 (빠른 응답)
-        Optional<Pokemon> pokemon = pokemonRepository.findByName(name);
+        Optional<Pokemon> pokemon = pokemonRepository.findByNameOrKoreanName(name, name);
 
         if (pokemon.isPresent()) {
             return convertToDTO(pokemon.get()); // 캐시 히트: DB에서 바로 반환
@@ -278,6 +282,8 @@ public class PokemonService {
                 }
                 pokemonDTO.setAbilities(abilityNames);
 
+                String koreanName = getPokemonKoreanName(name);
+                pokemonDTO.setKoreanName(koreanName);
                 // 설명은 임시로 빈문자열 설정 별도 api 호출 필요
                 String description = getPokemonDescription(name);
                 pokemonDTO.setDescription(description);
@@ -314,6 +320,7 @@ public class PokemonService {
         dto.setWeight(entity.getWeight());
         // JSON 문자열을 리스트로 역직렬화 (DB 저장 형태 → API 응답 형태)
         dto.setTypes(convertJsonToList(entity.getTypes()));
+        dto.setKoreanTypes(convertJsonToList(entity.getTypes()));
         dto.setAbilities(convertJsonToList(entity.getAbilities()));
         dto.setStats(convertJsonToStats(entity.getStats()));
         dto.setSpriteUrl(entity.getSpriteUrl());
@@ -335,6 +342,7 @@ public class PokemonService {
         pokemon.setWeight(dto.getWeight());
         // 리스트를 JSON 문자열로 직렬화 (API 응답 형태 → DB 저장 형태)
         pokemon.setTypes(convertListToJson(dto.getTypes()));
+        pokemon.setTypes(convertListToJson(dto.getKoreanTypes()));
         pokemon.setAbilities(convertListToJson(dto.getAbilities()));
         pokemon.setStats(convertStatsToJson(dto.getStats()));
         pokemon.setSpriteUrl(dto.getSpriteUrl());
@@ -473,4 +481,112 @@ public class PokemonService {
         return "";
     }
 
+    /**
+     * Species API에서 포켓몬 한글 이름만 가져오는 메서드
+     * 
+     */
+
+    @SuppressWarnings("unchecked")
+    private String getPokemonKoreanName(String name) {
+        try {
+            String speciesResponse = webClient.get()
+                    .uri("/pokemon-species/{name}", name)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            if (speciesResponse != null) {
+                Map<String, Object> speciesData = objectMapper.readValue(speciesResponse, Map.class);
+
+                // 한글이름 추출
+                List<Map<String, Object>> names = (List<Map<String, Object>>) speciesData.get("names");
+                if (names != null) {
+                    for (Map<String, Object> nameEntry : names) {
+                        Map<String, Object> language = (Map<String, Object>) nameEntry.get("language");
+                        if (language != null) { // 한글 체크 조건
+                            String languageName = (String) language.get("name");
+                            if ("ko".equals(languageName)) {
+                                return (String) nameEntry.get("name");
+                            }
+                        }
+
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Species API 호출 실패 - 포켓몬: {}, 오류: {}", name, e.getMessage(), e);
+        }
+        return "";
+
+    }
+
+    /*
+     * 타입별 포켓몬 조회
+     * 
+     * @param type 타입
+     * 
+     * @return 타입별 포켓몬 리스트
+     */
+    @SuppressWarnings("unchecked")
+    public List<PokemonDTO> getPokemonByType(String type) {
+        if (type == null || type.trim().isEmpty()) {
+            logger.warn("타입 검색 파라미터가 비었습니다.");
+            return new ArrayList<>();
+        }
+        try {
+            String searchType = type.trim();
+            if (isEnglishType(searchType)) {
+                searchType = convertEnglishTypeToKorean(searchType);
+            }
+            List<Pokemon> pokemons = pokemonRepository.findByKoreanTypeContaining(searchType);
+            List<PokemonDTO> result = pokemons.stream()
+                            .map(this::convertToDTO)
+                            .collect(Collectors.toList());
+            logger.info("타입별 포켓몬 조회 결과 : {} 건", result.size());
+            return result;
+        } catch (Exception e) {
+            logger.error("타입별 포켓몬 조회 실패 : {}", e.getMessage(), e);
+            return new ArrayList<>();
+            // TODO: handle exception
+        }
+    }
+    /**
+ * 영문 타입인지 확인
+ */
+private boolean isEnglishType(String type) {
+    Set<String> englishTypes = Set.of(
+        "normal", "fire", "water", "electric", "grass", "ice", "fighting",
+        "poison", "ground", "flying", "psychic", "bug", "rock", "ghost",
+        "dragon", "dark", "steel", "fairy"
+    );
+    return englishTypes.contains(type.toLowerCase());
+}
+
+
+    /**
+     * 영문 타입을 한글 타입으로 변환
+     */
+    private String convertEnglishTypeToKorean(String englishType) {
+        Map<String, String> typeMapping = new HashMap<>();
+        typeMapping.put("normal", "노말");
+        typeMapping.put("fire", "불꽃");
+        typeMapping.put("water", "물");
+        typeMapping.put("electric", "전기");
+        typeMapping.put("grass", "풀");
+        typeMapping.put("ice", "얼음");
+        typeMapping.put("fighting", "격투");
+        typeMapping.put("poison", "독");
+        typeMapping.put("ground", "땅");
+        typeMapping.put("flying", "비행");
+        typeMapping.put("psychic", "에스퍼");
+        typeMapping.put("bug", "벌레");
+        typeMapping.put("rock", "바위");
+        typeMapping.put("ghost", "고스트");
+        typeMapping.put("dragon", "드래곤");
+        typeMapping.put("dark", "악");
+        typeMapping.put("steel", "강철");
+        typeMapping.put("fairy", "페어리");
+
+        return typeMapping.getOrDefault(englishType, englishType);
+    }
 }

@@ -5,7 +5,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.List;
 import com.pokeapi.backend.entity.Pokemon;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface PokemonRepository extends JpaRepository<Pokemon, Long> {
@@ -33,5 +34,12 @@ public interface PokemonRepository extends JpaRepository<Pokemon, Long> {
 
     // 한글 이름 부분 검색
     List<Pokemon> findByKoreanNameContaining(String koreanName);
+
+    // 이름 또는 한글 이름 검색
+    Optional<Pokemon> findByNameOrKoreanName(String name, String koreanName);
+
+    //타입별 포켓몬 조회 (Json 타입 컬럼에서 검색)
+    @Query("SELECT p FROM Pokemon p WHERE p.koreanTypes LIKE %:type%")
+    List<Pokemon> findByKoreanTypeContaining(@Param("type") String type);
 
 }

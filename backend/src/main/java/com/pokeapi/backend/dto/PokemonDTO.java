@@ -19,6 +19,7 @@ public class PokemonDTO {
     private String shinySpriteUrl;
     private String officialArtworkUrl;
     private List<String> types;
+    private List<String> koreanTypes;
     private List<StatDTO> stats;
     private String description;
     private List<String> abilities;
@@ -35,6 +36,7 @@ public class PokemonDTO {
     public String getShinySpriteUrl() { return shinySpriteUrl; }
     public String getOfficialArtworkUrl() { return officialArtworkUrl; }
     public List<String> getTypes() { return types; }
+    public List<String> getKoreanTypes() { return koreanTypes; }
     public List<StatDTO> getStats() { return stats; }
     public String getDescription() { return description; }
     public List<String> getAbilities() { return abilities; }
@@ -51,6 +53,7 @@ public class PokemonDTO {
     public void setShinySpriteUrl(String shinySpriteUrl) { this.shinySpriteUrl = shinySpriteUrl; }
     public void setOfficialArtworkUrl(String officialArtworkUrl) { this.officialArtworkUrl = officialArtworkUrl; }
     public void setTypes(List<String> types) { this.types = types; }
+    public void setKoreanTypes(List<String> koreanTypes) { this.koreanTypes = koreanTypes; }
     public void setStats(List<StatDTO> stats) { this.stats = stats; }
     public void setDescription(String description) { this.description = description; }
     public void setAbilities(List<String> abilities) { this.abilities = abilities; }

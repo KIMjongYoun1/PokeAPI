@@ -61,6 +61,9 @@ public class Pokemon {
     @Column(name = "types", columnDefinition = "TEXT")
     private String types;
 
+    @Column(name = "korean_types", columnDefinition = "TEXT")
+    private String koreanTypes;
+
     @Column(name = "stats", columnDefinition = "TEXT")
     private String stats;
 

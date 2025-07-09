@@ -25,10 +25,10 @@ public class PokemonController {
     private static final Logger logger = LoggerFactory.getLogger(PokemonController.class);
     
     // 포켓몬 이름 유효성 검사를 위한 정규식 (영문자, 숫자, 하이픈만 허용)
-    private static final Pattern POKEMON_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-]+$");
+    private static final Pattern POKEMON_NAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9-]+$");
     
     // 타입 유효성 검사를 위한 정규식 (영문자만 허용)
-    private static final Pattern TYPE_PATTERN = Pattern.compile("^[a-zA-Z]+$");
+    private static final Pattern TYPE_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9-]+$");
 
     @Autowired
     private PokemonService pokemonService;
@@ -49,7 +49,7 @@ public class PokemonController {
             
             // 2단계: 서비스 호출
             logger.info("포켓몬 검색 요청: {}", name);
-            PokemonDTO pokemonDTO = pokemonService.searchPokemonName(name.trim().toLowerCase());
+            PokemonDTO pokemonDTO = pokemonService.searchPokemonName(name.trim());
             
             // 3단계: 결과 처리
             if (pokemonDTO != null) {
@@ -96,7 +96,7 @@ public class PokemonController {
             
             // 2단계: 서비스 호출
             logger.info("포켓몬 검색 요청 (쿼리 파라미터): {}", name);
-            PokemonDTO pokemonDTO = pokemonService.searchPokemonName(name.trim().toLowerCase());
+            PokemonDTO pokemonDTO = pokemonService.searchPokemonName(name.trim());
             
             // 3단계: 결과 처리
             if (pokemonDTO != null) {
