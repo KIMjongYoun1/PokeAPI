@@ -527,7 +527,7 @@ public class PokemonService {
      * 
      * @return 타입별 포켓몬 리스트
      */
-    @SuppressWarnings("unchecked")
+   
     public List<PokemonDTO> getPokemonByType(String type) {
         if (type == null || type.trim().isEmpty()) {
             logger.warn("타입 검색 파라미터가 비었습니다.");
