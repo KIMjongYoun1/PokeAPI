@@ -1,12 +1,12 @@
 
-import type { PokemonDTO } from "../types/Pokemon";
+import type { SearchMode } from "../types/Pokemon";
 
 interface SearchModeSelectorProps {
-    searchName: string;
+    searchMode: SearchMode;
     onModeChange: (mode: SearchMode) => void;
 }
 
-const SearchForm = ({ searchMode, onModeChange }: SearchModeSelectorProps) => {
+const SearchModeSelector = ({ searchMode, onModeChange }: SearchModeSelectorProps) => {
     return (
         <div className="search-mode-selector">
             <button
@@ -25,4 +25,4 @@ const SearchForm = ({ searchMode, onModeChange }: SearchModeSelectorProps) => {
     );
 };
 
-export default SearchForm;
+export default SearchModeSelector;

@@ -3,7 +3,7 @@ import type { AdvancedSearchParams } from "../types/Pokemon";
 interface AdvancedSearchFormProps {
     filters: AdvancedSearchParams;
     onFiltersChange: (filters: AdvancedSearchParams) => void;
-    onSearch: (e: React.FormEvent) => void;
+    onSearch: () => void;
 }
 
 const AdvancedSearchForm = ({ filters, onFiltersChange, onSearch} : AdvancedSearchFormProps) => {
@@ -22,13 +22,13 @@ const AdvancedSearchForm = ({ filters, onFiltersChange, onSearch} : AdvancedSear
 
             <div className="filter-section">
                 <h3>키(cm)</h3>
-                <div className="range-input:>">
+                <div className="range-inputs>">
                     <input
                         type="number"
                         value={filters.minHeight}
                         onChange={(e) => onFiltersChange({...filters, minHeight: e.target.value})}
                         placeholder="최소 키"
-                        className="range-input"
+                        className="filter-input"
                     />
                     <span>~</span>
                     <input
@@ -36,10 +36,16 @@ const AdvancedSearchForm = ({ filters, onFiltersChange, onSearch} : AdvancedSear
                         value={filters.maxHeight}
                         onChange={(e) => onFiltersChange({...filters, maxHeight: e.target.value})}
                         placeholder="최대 키"
-                        className="range-input"
+                        className="filter-input"
                     />
                 </div>
             </div>
+            {/** 검색 */}
+            <button onClick={onSearch} type="submit" className="search-button">
+                고급검색
+            </button>
         </div>
     )
 }
+
+export default AdvancedSearchForm;
