@@ -1,4 +1,4 @@
-import React from "react";
+
 import type { PokemonDTO } from "../types/Pokemon";
 
 interface PokemonGridProps {

@@ -237,7 +237,7 @@ public class PokemonService {
                 Map<String, Object> sprites = (Map<String, Object>) pokemonData.get("sprites");
                 if (sprites != null) {
                     pokemonDTO.setSpriteUrl((String) sprites.get("front_default"));
-                    pokemonDTO.setShinySpriteUrl((String) sprites.get("front_shint"));
+                    pokemonDTO.setShinySpriteUrl((String) sprites.get("front_shiny"));
                 }
 
                 // 타입 매핑

@@ -1,22 +1,55 @@
 -- PokeAPI Sample Data
--- PostgreSQL 15
+-- PostgreSQL 15 (새로운 스키마에 맞게 수정)
 
--- 샘플 포켓몬 데이터 삽입
-INSERT INTO pokemon (pokemon_id, name, height, weight, image_url, shiny_image_url) VALUES
-(25, 'pikachu', 4, 60, 
+-- 샘플 포켓몬 데이터 삽입 (JSON 형태로 저장)
+INSERT INTO pokemon (
+    pokemon_id, name, korean_name, base_experience, height, weight, 
+    sprite_url, shiny_sprite_url, official_artwork_url,
+    types, korean_types, stats, description, abilities
+) VALUES
+(25, 'pikachu', '피카츄', 112, 4, 60, 
  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png',
- 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/25.png'),
-(1, 'bulbasaur', 7, 69,
+ 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/25.png',
+ 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/other/official-artwork/25.png',
+ '["electric"]',
+ '["전기"]',
+ '[{"name":"hp","baseStat":35,"effort":0},{"name":"attack","baseStat":55,"effort":0},{"name":"defense","baseStat":40,"effort":0},{"name":"special-attack","baseStat":50,"effort":0},{"name":"special-defense","baseStat":50,"effort":0},{"name":"speed","baseStat":90,"effort":2}]',
+ '피카츄는 전기 포켓몬입니다. 볼을 흔들면 전기를 모읍니다.',
+ '["static","lightning-rod"]'),
+
+(1, 'bulbasaur', '이상해씨', 64, 7, 69,
  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png',
- 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/1.png'),
-(4, 'charmander', 6, 85,
+ 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/1.png',
+ 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/other/official-artwork/1.png',
+ '["grass","poison"]',
+ '["풀","독"]',
+ '[{"name":"hp","baseStat":45,"effort":0},{"name":"attack","baseStat":49,"effort":0},{"name":"defense","baseStat":49,"effort":0},{"name":"special-attack","baseStat":65,"effort":1},{"name":"special-defense","baseStat":65,"effort":0},{"name":"speed","baseStat":45,"effort":0}]',
+ '이상해씨는 풀/독 타입 포켓몬입니다. 등에 씨앗이 있습니다.',
+ '["overgrow","chlorophyll"]'),
+
+(4, 'charmander', '파이리', 62, 6, 85,
  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png',
- 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/4.png'),
-(7, 'squirtle', 5, 90,
+ 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/4.png',
+ 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/other/official-artwork/4.png',
+ '["fire"]',
+ '["불꽃"]',
+ '[{"name":"hp","baseStat":39,"effort":0},{"name":"attack","baseStat":52,"effort":0},{"name":"defense","baseStat":43,"effort":0},{"name":"special-attack","baseStat":60,"effort":0},{"name":"special-defense","baseStat":50,"effort":0},{"name":"speed","baseStat":65,"effort":1}]',
+ '파이리는 불꽃 타입 포켓몬입니다. 꼬리에서 불꽃이 타오릅니다.',
+ '["blaze","solar-power"]'),
+
+(7, 'squirtle', '꼬부기', 63, 5, 90,
  'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png',
- 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/7.png')
+ 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/7.png',
+ 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/other/official-artwork/7.png',
+ '["water"]',
+ '["물"]',
+ '[{"name":"hp","baseStat":44,"effort":0},{"name":"attack","baseStat":48,"effort":0},{"name":"defense","baseStat":65,"effort":1},{"name":"special-attack","baseStat":50,"effort":0},{"name":"special-defense","baseStat":64,"effort":0},{"name":"speed","baseStat":43,"effort":0}]',
+ '꼬부기는 물 타입 포켓몬입니다. 등껍질을 이용해 방어합니다.',
+ '["torrent","rain-dish"]')
+
 ON CONFLICT (pokemon_id) DO NOTHING;
 
+-- 기존 정규화된 테이블 샘플 데이터 (참고용으로 유지)
 -- 샘플 타입 데이터 삽입
 INSERT INTO pokemon_type (pokemon_id, type_name, slot) VALUES
 (1, 'grass', 1),
@@ -73,4 +106,7 @@ SELECT 'Type Count', COUNT(*) FROM pokemon_type
 UNION ALL
 SELECT 'Stat Count', COUNT(*) FROM pokemon_stat
 UNION ALL
-SELECT 'Ability Count', COUNT(*) FROM pokemon_ability; 
+SELECT 'Ability Count', COUNT(*) FROM pokemon_ability;
+
+-- JSON 데이터 확인
+SELECT pokemon_id, name, types, stats, abilities FROM pokemon LIMIT 3; 
