@@ -1,6 +1,7 @@
 com/pokeapi/backend/controller/PokemonController.class
 com/pokeapi/backend/dto/PokemonDTO.class
 com/pokeapi/backend/dto/PokemonDTO$StatDTO.class
+com/pokeapi/backend/config/WebConfig.class
 com/pokeapi/backend/controller/RequestController.class
 com/pokeapi/backend/service/PokemonService.class
 com/pokeapi/backend/PokeApiApplication.class
