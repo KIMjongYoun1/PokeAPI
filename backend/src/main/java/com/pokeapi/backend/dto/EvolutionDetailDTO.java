@@ -42,7 +42,7 @@ public class EvolutionDetailDTO {
     private ApiResourceDTO location;
 
     @JsonProperty("min_happiness")
-    private Integer minhappiness;
+    private Integer minHappiness;
 
     @JsonProperty("min_beauty")
     private Integer minBeauty;

@@ -1,6 +1,8 @@
 package com.pokeapi.backend.controller;
 
 import com.pokeapi.backend.service.PokemonService;
+import com.pokeapi.backend.dto.EvolutionDTO;
+
 import com.pokeapi.backend.dto.PokemonDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,8 @@ public class PokemonController {
 
     @Autowired
     private PokemonService pokemonService;
+
+
 
     @GetMapping("/{name}")
     public ResponseEntity<PokemonDTO> getPokemon(@PathVariable String name) {
@@ -201,5 +205,44 @@ public class PokemonController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+/**
+ * 포켓몬 진화 체인
+ * 
+ * @param name Pokemon Name
+ * @return EvolutionChain
+ */
 
+ @GetMapping("/{name}/evolution-chain")
+ public ResponseEntity<EvolutionDTO> getEvolutionChain(@PathVariable String name) {
+
+    try {
+        // 유효성 검사
+        if (name ==null || name.trim().isEmpty()) {
+            logger.warn("포켓몬 이름이 비어있습니다");
+            return ResponseEntity.badRequest().build();
+
+        }
+
+        if (!POKEMON_NAME_PATTERN.matcher(name.trim()).matches()){
+            logger.warn("잘못된 포켓몬의 이름 입니다: {}", name);
+            return ResponseEntity.badRequest().build();
+        }
+
+        // 서비스호출
+        logger.info("포켓몬 진화체인 검색 시작: {}", name);
+        EvolutionDTO evolutionDTO = pokemonService.getEvolutionChain(name.trim());
+        
+        // 결과 처리
+        if (evolutionDTO != null) {
+            logger.info("포켓몬 진화 체인 검색 성공: {}", name);
+            return ResponseEntity.ok(evolutionDTO);
+        } else {
+            logger.warn("포켓몬 진화체인을 찾을 수 없음: {}:", name);
+            return ResponseEntity.notFound().build();
+        }
+    } catch (Exception e) {
+        logger.error("포켓몬 진화 체인 조회중 오류발생: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+ }
 }
