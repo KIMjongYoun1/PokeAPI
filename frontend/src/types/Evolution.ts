@@ -14,7 +14,7 @@ export interface ApiResourceDTO {
 export interface EvolutionDetail {
     item: ApiResourceDTO | null; // 진화에 필요한 아이템
     trigger: ApiResourceDTO; // 진화 트리거
-    genter: number | null; // 성별 조건 1: 수컷, 2: 암컷 null: 무관
+    gender: number | null; // 성별 조건 1: 수컷, 2: 암컷 null: 무관
     held_item: ApiResourceDTO | null; // 지니고 있어야하는 아이템
     known_move: ApiResourceDTO | null; // 알려야 하는 기술
     known_move_type: ApiResourceDTO | null; // 알려야 하는 타입의 기술
@@ -27,7 +27,7 @@ export interface EvolutionDetail {
     party_species: ApiResourceDTO | null; //파티에 있어야 하는 포켓몬
     party_type: ApiResourceDTO | null; // 파티에 있어야 하는 타입
     relative_physical_stats: number | null; // 상대적 물리 능력치
-    time_of_daty: string | null; //시간대 조건 day, night, dusk
+    time_of_day: string | null; //시간대 조건 day, night, dusk
     trade_species: ApiResourceDTO | null; // 교환해야하는 포켓몬
     turn_upside_down: boolean; // 3ds뒤집어야 하는지
 }
