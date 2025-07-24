@@ -10,11 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -80,6 +82,47 @@ public class PokemonController {
             
         } catch (Exception e) {
             logger.error("전체 포켓몬 목록 조회 중 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 전체 포켓몬 목록 조회 (페이징 처리)
+     */
+    @GetMapping("/list")
+    public ResponseEntity<Map<String, Object>> getAllPokemonsWithPaging(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "1") int generation) {
+        
+        try {
+            logger.info("페이징 포켓몬 목록 조회 요청: page={}, size={}, generation={}", page, size, generation);
+            Map<String, Object> response = pokemonService.getPokemonsWithPaging(page, size, generation);
+            logger.info("페이징 포켓몬 목록 조회 성공");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("페이징 포켓몬 목록 조회 중 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * 전체 포켓몬 데이터 초기화 (PokeAPI에서 가져와서 DB에 저장)
+     */
+    @PostMapping("/initialize")
+    public ResponseEntity<Map<String, Object>> initializeAllPokemons(
+            @RequestParam(defaultValue = "151") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        
+        try {
+            logger.info("전체 포켓몬 데이터 초기화 시작: limit={}, offset={}", limit, offset);
+            Map<String, Object> result = pokemonService.initializeAllPokemonsFromApi(limit, offset);
+            logger.info("전체 포켓몬 데이터 초기화 완료");
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            logger.error("전체 포켓몬 데이터 초기화 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

@@ -95,3 +95,66 @@ PokeAPI/
 - [데이터베이스 설계서](./database-design.md)
 - [API 문서](./api-documentation.md)
 - [개발 가이드](./development-guide.md) 
+
+## 🗄️ 데이터베이스 설정 및 동기화
+
+### 1. DB 연결 정보 (application.properties)
+- DB명: pokeapi
+- Host: localhost
+- Port: 5432
+- User: ryankim
+- Password: 1234
+
+```
+spring.datasource.url=jdbc:postgresql://localhost:5432/pokeapi
+spring.datasource.username=ryankim
+spring.datasource.password=1234
+```
+
+### 2. SQL 스크립트 적용 방법
+- 프로젝트 내 database/schema.sql, sample-data.sql 등은 자동 실행되지 않으므로, pokeapi DB에 직접 실행해야 함
+- 예시:
+```bash
+psql -h localhost -U ryankim -d pokeapi -f database/schema.sql
+psql -h localhost -U ryankim -d pokeapi -f database/sample-data.sql
+```
+- VS Code 등 IDE에서 PostgreSQL 확장으로 pokeapi DB에 연결 후 SQL 파일 실행 가능
+
+### 3. DB 동기화 주의사항
+- application.properties의 DB 설정과 SQL 스크립트 실행 대상 DB가 반드시 pokeapi로 일치해야 함
+- DBeaver, DataGrip 등 DB 툴에서도 pokeapi DB로 연결해야 실제 데이터 확인 가능 
+
+## 🖥️ 프론트엔드 컴포넌트 전체 목록 및 역할 (모두 구현 완료)
+
+- **AdvancedSearchForm**: 고급 검색 조건 입력 폼 (구현 완료)
+- **ErrorMessage**: 에러 메시지 및 재시도 버튼 표시 (구현 완료)
+- **EvolutionChain**: 포켓몬 진화 체인 전체 시각화 (구현 완료)
+- **EvolutionChainTree**: 진화 트리 구조 재귀 렌더링 (구현 완료)
+- **EvolutionCondition**: 진화 조건 텍스트 변환 및 표시 (구현 완료)
+- **LoadingSpinner**: 로딩 상태 표시 (구현 완료)
+- **PokemonCard**: 포켓몬 상세 정보 카드 (구현 완료)
+- **PokemonGrid**: 전체 포켓몬 목록 그리드 (구현 완료)
+- **PokemonNode**: 진화 트리 내 포켓몬 노드 (구현 완료)
+- **PokemonSprite**: 포켓몬 이름으로 스프라이트 이미지 fetch 및 표시 (구현 완료)
+- **SearchForm**: 단일 검색 입력 폼 (구현 완료)
+- **SearchModeSelector**: 단일/고급 검색 모드 전환 버튼 (구현 완료)
+- **StatComparisonChart**: 포켓몬 능력치 비교 차트 (구현 완료)
+
+### UI/UX 특징
+- 모든 컴포넌트는 props 기반으로 재사용성 높게 설계 (구현 완료)
+- 로딩/에러/데이터 없음 등 상태별 UI 처리 (구현 완료)
+- 클릭/선택 등 사용자 상호작용 지원 (구현 완료)
+- 진화 트리, 능력치 차트 등 시각화 컴포넌트 포함 (구현 완료)
+
+### 구현된 주요 기능
+- 전체 포켓몬 목록(이름+사진+타입) 그리드로 표시 (구현 완료)
+- 포켓몬 클릭 시 상세 정보(카드)로 전환 (구현 완료)
+- 단일/고급 검색, 검색 결과 그리드 표시 (구현 완료)
+- 상세 정보: 이름, 번호, 이미지(일반/샤이니/공식), 타입, 특성, 능력치 등 (구현 완료)
+- 진화 트리, 능력치 비교 등 부가 기능도 모두 구현 완료 
+
+### 추가 구현 컴포넌트 (모두 구현 완료)
+- **EvolutionChainTree**: 진화 트리 구조를 재귀적으로 시각화 (구현 완료)
+- **EvolutionCondition**: 진화 조건을 텍스트로 변환해 표시 (구현 완료)
+- **PokemonNode**: 진화 트리 내 각 포켓몬 노드(이름, 스프라이트, 진화조건, 현재 포켓몬 강조) (구현 완료)
+- **PokemonSprite**: 포켓몬 이름으로 스프라이트 이미지를 fetch 및 표시 (구현 완료) 

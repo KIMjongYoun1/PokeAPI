@@ -163,3 +163,13 @@ FROM pokemon p
 JOIN pokemon_type pt ON p.id = pt.pokemon_id
 WHERE pt.type_name = 'fire';
 ``` 
+
+## 🗄️ 실제 운영 DB 및 스크립트 적용 주의사항
+- Spring Boot 및 모든 SQL/JPA 쿼리는 pokeapi DB에 연결됨 (application.properties 참고)
+- database/schema.sql, sample-data.sql 등은 pokeapi DB에 직접 실행해야 실제 데이터와 구조가 일치함
+- DB 툴, IDE 등에서 pokeapi DB로 연결해서 확인/적용할 것 
+
+## 🖥️ 프론트엔드 주요 컴포넌트와 DB 구조 활용 예시
+- **EvolutionChain, EvolutionChainTree**: pokemon, pokemon_type, pokemon_stat 등 테이블을 활용해 진화 트리 시각화 (구현 완료)
+- **StatComparisonChart**: pokemon_stat 테이블을 활용해 능력치 비교 (구현 완료)
+- **PokemonGrid, PokemonCard**: pokemon, pokemon_type 등 테이블을 활용해 전체 목록 및 상세 정보 표시 (구현 완료) 

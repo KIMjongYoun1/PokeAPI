@@ -159,6 +159,12 @@ export default ComponentName;
 - **StatComparisonChart**: 능력치 비교 차트 (빈 파일)
 - **EvolutionChain**: 진화 체인 표시 (빈 파일)
 
+### 추가 구현 컴포넌트 (모두 구현 완료)
+- **EvolutionChainTree**: 진화 트리 구조를 재귀적으로 시각화 (구현 완료)
+- **EvolutionCondition**: 진화 조건을 텍스트로 변환해 표시 (구현 완료)
+- **PokemonNode**: 진화 트리 내 각 포켓몬 노드(이름, 스프라이트, 진화조건, 현재 포켓몬 강조) (구현 완료)
+- **PokemonSprite**: 포켓몬 이름으로 스프라이트 이미지를 fetch 및 표시 (구현 완료)
+
 ## 🧪 테스트 작성
 
 ### 백엔드 테스트
@@ -255,4 +261,48 @@ test('renders pokemon name', () => {
 
 ### PostgreSQL
 - [PostgreSQL 공식 문서](https://www.postgresql.org/docs/)
-- [PostgreSQL 튜토리얼](https://www.postgresqltutorial.com/) 
+- [PostgreSQL 튜토리얼](https://www.postgresqltutorial.com/)
+
+## 🗄️ 데이터베이스 연결 및 SQL 스크립트 적용
+
+### 1. DB 연결 정보
+- DB명: pokeapi
+- Host: localhost
+- Port: 5432
+- User: ryankim
+- Password: 1234
+
+### 2. SQL 스크립트 적용 방법
+- database/schema.sql, sample-data.sql 등은 자동 실행되지 않으므로 pokeapi DB에 직접 실행해야 함
+- 예시:
+```bash
+psql -h localhost -U ryankim -d pokeapi -f database/schema.sql
+psql -h localhost -U ryankim -d pokeapi -f database/sample-data.sql
+```
+- VS Code(커서)에서 PostgreSQL 확장 설치 후 pokeapi DB로 연결, SQL 파일 열고 실행 가능
+
+### 3. DB 동기화 주의사항
+- application.properties의 DB 설정과 SQL 스크립트 실행 대상 DB가 반드시 pokeapi로 일치해야 함
+- DB 툴, IDE 등에서 pokeapi DB로 연결해야 실제 데이터 확인 가능
+
+## 🖥️ 프론트엔드 구조 및 구현 기능
+
+### 폴더 구조
+- src/components: UI 컴포넌트 (PokemonCard, PokemonGrid 등)
+- src/page: 페이지 컴포넌트 (HomePage, PokemonDetailPage 등, 예정)
+- src/types: 타입 정의
+
+### 주요 구현 컴포넌트
+- PokemonGrid: 전체 포켓몬 목록(이름+사진+타입) 그리드
+- PokemonCard: 포켓몬 상세 정보 카드
+- SearchForm, AdvancedSearchForm: 검색 폼
+
+### 구현된 주요 기능
+- 전체 포켓몬 목록을 그리드로 이름+사진+타입으로 표시
+- 포켓몬 클릭 시 상세 정보로 전환
+- 단일/고급 검색, 검색 결과 그리드 표시
+- 상세 정보: 이름, 번호, 이미지, 타입, 특성, 능력치 등
+
+### 페이지화 계획
+- 전체 포켓몬 페이지: 이름+사진+타입 그리드, 클릭 시 상세조회로 이동
+- 상세조회 페이지: 포켓몬의 모든 정보 표시

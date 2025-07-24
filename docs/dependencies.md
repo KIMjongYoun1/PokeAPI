@@ -35,6 +35,10 @@
 | vite | 5.x | 빌드 도구 |
 | @vitejs/plugin-react | 5.x | React 플러그인 |
 
+### 추가 프론트엔드 컴포넌트 및 라이브러리 (구현 완료)
+- **EvolutionChainTree, EvolutionCondition, PokemonNode, PokemonSprite**: 진화 트리, 조건, 스프라이트 등 시각화/상호작용 컴포넌트 (구현 완료)
+- **recharts**: StatComparisonChart 등 차트 시각화에 사용 (구현 완료)
+
 ## 📦 pom.xml 의존성 설정
 
 ```xml

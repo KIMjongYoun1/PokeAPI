@@ -31,16 +31,16 @@ public class Pokemon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "pokemon_id", unique = true, nullable = false)
+    @Column(name = "pokemon_id", unique = true, nullable = true)
     private Integer pokemonId;
 
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "korean_name", nullable = false)
+    @Column(name = "korean_name", nullable = true)
     private String koreanName;
 
-    @Column(name = "base_experience", nullable = false)
+    @Column(name = "base_experience", nullable = true)
     private Integer baseExperience;
 
     @Column(name = "height")
@@ -49,10 +49,10 @@ public class Pokemon {
     @Column(name = "weight")
     private Integer weight;
 
-    @Column(name = "sprite_url", nullable = false)
+    @Column(name = "sprite_url", nullable = true)
     private String spriteUrl;
 
-    @Column(name = "shiny_sprite_url", nullable = false)
+    @Column(name = "shiny_sprite_url", nullable = true)
     private String shinySpriteUrl;
 
     @Column(name = "official_artwork_url")

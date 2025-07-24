@@ -42,4 +42,9 @@ public interface PokemonRepository extends JpaRepository<Pokemon, Long> {
     @Query("SELECT p FROM Pokemon p WHERE p.koreanTypes LIKE %:type%")
     List<Pokemon> findByKoreanTypeContaining(@Param("type") String type);
 
+    /**
+     * 포켓몬 ID 범위로 검색 (세대별 조회용)
+     */
+    List<Pokemon> findByPokemonIdBetween(Integer startId, Integer endId);
+
 }

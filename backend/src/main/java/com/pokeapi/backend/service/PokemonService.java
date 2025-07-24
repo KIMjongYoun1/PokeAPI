@@ -3,12 +3,16 @@ package com.pokeapi.backend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-
 import com.pokeapi.backend.dto.EvolutionDTO;
 import com.pokeapi.backend.dto.PokemonDTO;
 import com.pokeapi.backend.dto.SpeciesDTO;
 import com.pokeapi.backend.dto.PokemonApiResponseDTO;
 import com.pokeapi.backend.repository.PokemonRepository;
+import com.pokeapi.backend.repository.PokemonNameMappingRepository;
+import com.pokeapi.backend.entity.PokemonNameMapping;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Set;
 import java.util.HashMap;
+import jakarta.annotation.PostConstruct;
 
     
 
@@ -44,6 +49,9 @@ public class PokemonService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private PokemonNameMappingRepository pokemonNameMappingRepository;
 
  
 
@@ -91,6 +99,68 @@ public class PokemonService {
         return pokemons.stream()
                 .map(this::convertToDTO) // 메서드 레퍼런스로 변환 함수 적용
                 .collect(Collectors.toList()); // 스트림 결과를 리스트로 수집
+    }
+
+    /**
+     * 페이징 처리가 포함된 포켓몬 목록 조회
+     * 
+     * @param page 페이지 번호 (0부터 시작)
+     * @param size 페이지당 항목 수
+     * @param generation 세대 번호 (1-9)
+     * @return 페이징 정보와 포켓몬 목록
+     */
+    public Map<String, Object> getPokemonsWithPaging(int page, int size, int generation) {
+        try {
+            // 세대별 포켓몬 ID 범위 정의
+            Map<Integer, int[]> generationRanges = new HashMap<>();
+            generationRanges.put(1, new int[]{1, 151});      // 1세대: 1-151
+            generationRanges.put(2, new int[]{152, 251});    // 2세대: 152-251
+            generationRanges.put(3, new int[]{252, 386});    // 3세대: 252-386
+            generationRanges.put(4, new int[]{387, 493});    // 4세대: 387-493
+            generationRanges.put(5, new int[]{494, 649});    // 5세대: 494-649
+            generationRanges.put(6, new int[]{650, 721});    // 6세대: 650-721
+            generationRanges.put(7, new int[]{722, 809});    // 7세대: 722-809
+            generationRanges.put(8, new int[]{810, 898});    // 8세대: 810-898
+            generationRanges.put(9, new int[]{899, 1010});   // 9세대: 899-1010
+
+            int[] range = generationRanges.getOrDefault(generation, new int[]{1, 151});
+            int startId = range[0];
+            int endId = range[1];
+
+            // 해당 세대의 포켓몬만 조회
+            List<Pokemon> pokemons = pokemonRepository.findByPokemonIdBetween(startId, endId);
+            
+            // 페이징 처리
+            int totalSize = pokemons.size();
+            int totalPages = (int) Math.ceil((double) totalSize / size);
+            int startIndex = page * size;
+            int endIndex = Math.min(startIndex + size, totalSize);
+            
+            List<PokemonDTO> pagedPokemons = pokemons.subList(startIndex, endIndex)
+                    .stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+
+            // 응답 데이터 구성
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", pagedPokemons);
+            response.put("page", page);
+            response.put("size", size);
+            response.put("totalElements", totalSize);
+            response.put("totalPages", totalPages);
+            response.put("generation", generation);
+            response.put("hasNext", page < totalPages - 1);
+            response.put("hasPrevious", page > 0);
+
+            logger.info("페이징 포켓몬 조회 완료: 세대={}, 페이지={}, 크기={}, 총={}개", 
+                    generation, page, size, totalSize);
+
+            return response;
+
+        } catch (Exception e) {
+            logger.error("페이징 포켓몬 조회 실패: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
@@ -207,12 +277,13 @@ public class PokemonService {
      */
     private PokemonDTO callPokeApi(String name) {
         try {
-            // 1단계: API 호출 시작 로그 기록
-            logger.info("PokéAPI 호출 시작: {}", name);
+            // 1단계: 한글 이름을 영문 이름으로 변환
+            String englishName = convertKoreanToEnglish(name);
+            logger.info("PokéAPI 호출 시작: {} -> {}", name, englishName);
 
-            // 2단계: WebClient를 사용한 HTTP GET 요청 생성
+            // 2단계: WebClient를 사용한 HTTP GET 요청 생성 (영문 이름 사용)
             String response = webClient.get()
-                    .uri("/pokemon/{name}", name)
+                    .uri("/pokemon/{name}", englishName)
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
@@ -254,11 +325,11 @@ public class PokemonService {
                         PokemonDTO.StatDTO statDTO = new PokemonDTO.StatDTO();
                         statDTO.setBaseStat(stat.getBaseStat());
                         statDTO.setEffort(stat.getEffort());
-                        
+
                         if (stat.getStat() != null) {
                             statDTO.setName(stat.getStat().getName());
                         }
-                        
+
                         statDTOs.add(statDTO);
                     }
                 }
@@ -283,7 +354,9 @@ public class PokemonService {
                 
                 // 5단계: 성공 로그 기록
                 logger.info("PokéAPI에서 {} 정보 성공적으로 가져옴", name);
-
+                // 디버깅용: DTO 값 확인
+                logger.debug("[callPokeApi] PokemonDTO 생성 결과: baseExp={}, height={}, weight={}, name={}",
+                    pokemonDTO.getBaseExperience(), pokemonDTO.getHeight(), pokemonDTO.getWeight(), pokemonDTO.getName());
                 // 6단계: 변환된 PokemonDTO 객체 반환
                 return pokemonDTO;
             }
@@ -305,17 +378,21 @@ public class PokemonService {
      */
     private PokemonDTO convertToDTO(Pokemon entity) {
         PokemonDTO dto = new PokemonDTO();
+        dto.setPokemonId(entity.getPokemonId());
         dto.setName(entity.getName());
         dto.setKoreanName(entity.getKoreanName());
+        dto.setBaseExperience(entity.getBaseExperience()); // 추가
+        dto.setPokemonId(entity.getPokemonId());           // 추가
         dto.setHeight(entity.getHeight());
         dto.setWeight(entity.getWeight());
-        // JSON 문자열을 리스트로 역직렬화 (DB 저장 형태 → API 응답 형태)
         dto.setTypes(convertJsonToList(entity.getTypes()));
-        dto.setKoreanTypes(convertJsonToList(entity.getTypes()));
+        // dto.setKoreanTypes(convertJsonToList(entity.getKoreanTypes())); // 수정
         dto.setAbilities(convertJsonToList(entity.getAbilities()));
         dto.setStats(convertJsonToStats(entity.getStats()));
         dto.setSpriteUrl(entity.getSpriteUrl());
         dto.setShinySpriteUrl(entity.getShinySpriteUrl());
+        dto.setOfficialArtworkUrl(entity.getOfficialArtworkUrl()); // 추가
+        dto.setDescription(entity.getDescription());               // 추가
         return dto;
     }
 
@@ -327,17 +404,24 @@ public class PokemonService {
      */
     private Pokemon convertToEntity(PokemonDTO dto) {
         Pokemon pokemon = new Pokemon();
+        pokemon.setPokemonId(dto.getPokemonId());
         pokemon.setName(dto.getName());
         pokemon.setKoreanName(dto.getKoreanName());
+        pokemon.setBaseExperience(dto.getBaseExperience()); // 이 줄이 반드시 필요!
         pokemon.setHeight(dto.getHeight());
         pokemon.setWeight(dto.getWeight());
-        // 리스트를 JSON 문자열로 직렬화 (API 응답 형태 → DB 저장 형태)
         pokemon.setTypes(convertListToJson(dto.getTypes()));
-        pokemon.setTypes(convertListToJson(dto.getKoreanTypes()));
+        // pokemon.setKoreanTypes(convertListToJson(dto.getKoreanTypes()));
         pokemon.setAbilities(convertListToJson(dto.getAbilities()));
         pokemon.setStats(convertStatsToJson(dto.getStats()));
         pokemon.setSpriteUrl(dto.getSpriteUrl());
         pokemon.setShinySpriteUrl(dto.getShinySpriteUrl());
+        pokemon.setOfficialArtworkUrl(dto.getOfficialArtworkUrl());
+        pokemon.setDescription(dto.getDescription());
+       
+        // 디버깅용: Entity 값 확인
+        logger.debug("[convertToEntity] Entity 값: baseExp={}, height={}, weight={}, name={}",
+            dto.getBaseExperience(), dto.getHeight(), dto.getWeight(), dto.getName());
         return pokemon;
     }
 
@@ -348,6 +432,9 @@ public class PokemonService {
      * @return 저장된 엔티티 (ID 포함)
      */
     private Pokemon savePokemon(PokemonDTO dto) {
+        // 디버깅용: DB 저장 전 DTO 값 확인
+        logger.debug("[savePokemon] DB 저장 전 DTO 값: baseExp={}, height={}, weight={}, name={}",
+            dto.getBaseExperience(), dto.getHeight(), dto.getWeight(), dto.getName());
         Pokemon pokemon = convertToEntity(dto); // DTO → Entity 변환
         return pokemonRepository.save(pokemon); // JPA를 통한 DB 저장
     }
@@ -488,7 +575,7 @@ public class PokemonService {
                     for (SpeciesDTO.NameEntryDTO nameEntry : speciesData.getNames()) {
                         if (nameEntry.getLanguage() != null && "ko".equals(nameEntry.getLanguage().getName())) {
                             return nameEntry.getName();
-                        }
+                            }
                     }
                 }
             }
@@ -542,6 +629,387 @@ private boolean isEnglishType(String type) {
 
 
     /**
+     * 한글 포켓몬 이름을 영문 이름으로 동적 변환 (DB 캐싱 + 외부 API)
+     */
+    private String convertKoreanToEnglish(String koreanName) {
+        try {
+            // 1단계: DB 캐시에서 먼저 조회
+            Optional<PokemonNameMapping> cachedMapping = pokemonNameMappingRepository.findByKoreanName(koreanName);
+            if (cachedMapping.isPresent()) {
+                logger.info("DB 캐시에서 한글 이름 변환 성공: {} -> {}", koreanName, cachedMapping.get().getEnglishName());
+                return cachedMapping.get().getEnglishName();
+            }
+
+            // 2단계: 캐시에 없으면 외부 API로 동적 검색
+            logger.info("DB 캐시에 없어서 외부 API로 한글 이름 변환 시작: {}", koreanName);
+            String englishName = searchEnglishNameFromApi(koreanName);
+            
+            if (englishName != null && !englishName.equals(koreanName)) {
+                // 3단계: 찾은 매핑을 DB에 캐싱
+                saveNameMapping(koreanName, englishName);
+                logger.info("외부 API에서 한글 이름 변환 성공 및 캐싱: {} -> {}", koreanName, englishName);
+                return englishName;
+            }
+            
+        } catch (Exception e) {
+            logger.error("한글 이름 변환 실패: {}, 오류: {}", koreanName, e.getMessage(), e);
+        }
+        
+        // 4단계: 변환 실패시 원본 반환
+        logger.warn("한글 이름 변환 실패, 원본 반환: {}", koreanName);
+        return koreanName;
+    }
+
+    /**
+     * 외부 API를 통해 한글 이름으로 영문 이름 검색 (1세대 포켓몬만)
+     */
+    private String searchEnglishNameFromApi(String koreanName) {
+        // 1세대 포켓몬 한글-영문 매핑 (임시로 하드코딩)
+        Map<String, String> firstGenMapping = new HashMap<>();
+        firstGenMapping.put("꼬부기", "squirtle");
+        firstGenMapping.put("피카츄", "pikachu");
+        firstGenMapping.put("파이리", "charmander");
+        firstGenMapping.put("이상해씨", "bulbasaur");
+        firstGenMapping.put("라이츄", "raichu");
+        firstGenMapping.put("구구", "rattata");
+        firstGenMapping.put("레트라", "raticate");
+        firstGenMapping.put("아보", "ekans");
+        firstGenMapping.put("아보크", "arbok");
+        firstGenMapping.put("모래두지", "sandshrew");
+        firstGenMapping.put("고지", "sandslash");
+        firstGenMapping.put("니드런♀", "nidoran-f");
+        firstGenMapping.put("니드리나", "nidorina");
+        firstGenMapping.put("니드퀸", "nidoqueen");
+        firstGenMapping.put("니드런♂", "nidoran-m");
+        firstGenMapping.put("니드리노", "nidorino");
+        firstGenMapping.put("니드킹", "nidoking");
+        firstGenMapping.put("삐", "clefairy");
+        firstGenMapping.put("픽시", "clefable");
+        firstGenMapping.put("주뱃", "zubat");
+        firstGenMapping.put("골뱃", "golbat");
+        firstGenMapping.put("뚜벅쵸", "oddish");
+        firstGenMapping.put("냄새꼬", "gloom");
+        firstGenMapping.put("라플레시아", "vileplume");
+        firstGenMapping.put("파라스", "paras");
+        firstGenMapping.put("파라섹트", "parasect");
+        firstGenMapping.put("콘팡", "venonat");
+        firstGenMapping.put("도나리", "venomoth");
+        firstGenMapping.put("디그다", "diglett");
+        firstGenMapping.put("닥트리오", "dugtrio");
+        firstGenMapping.put("나옹", "meowth");
+        firstGenMapping.put("페르시온", "persian");
+        firstGenMapping.put("고라파덕", "psyduck");
+        firstGenMapping.put("골덕", "golduck");
+        firstGenMapping.put("망키", "mankey");
+        firstGenMapping.put("성원숭이", "primeape");
+        firstGenMapping.put("가디", "growlithe");
+        firstGenMapping.put("윈디", "arcanine");
+        firstGenMapping.put("발챙이", "poliwag");
+        firstGenMapping.put("슈륙챙이", "poliwhirl");
+        firstGenMapping.put("강챙이", "poliwrath");
+        firstGenMapping.put("케이시", "abra");
+        firstGenMapping.put("윤겔라", "kadabra");
+        firstGenMapping.put("후딘", "alakazam");
+        firstGenMapping.put("근육몬", "machop");
+        firstGenMapping.put("근육통", "machoke");
+        firstGenMapping.put("괴력몬", "machamp");
+        firstGenMapping.put("캐이시", "bellsprout");
+        firstGenMapping.put("우츠동", "weepinbell");
+        firstGenMapping.put("우츠보트", "victreebel");
+        firstGenMapping.put("딱충이", "tentacool");
+        firstGenMapping.put("슬리프", "tentacruel");
+        firstGenMapping.put("구렁이", "geodude");
+        firstGenMapping.put("데구리", "graveler");
+        firstGenMapping.put("딱구리", "golem");
+        firstGenMapping.put("포니타", "ponyta");
+        firstGenMapping.put("날쌩마", "rapidash");
+        firstGenMapping.put("야돈", "slowpoke");
+        firstGenMapping.put("야도란", "slowbro");
+        firstGenMapping.put("코일", "magnemite");
+        firstGenMapping.put("레어코일", "magneton");
+        firstGenMapping.put("파오리", "farfetchd");
+        firstGenMapping.put("두두", "doduo");
+        firstGenMapping.put("두트리오", "dodrio");
+        firstGenMapping.put("쥬쥬", "seel");
+        firstGenMapping.put("쥬레곤", "dewgong");
+        firstGenMapping.put("질뻐기", "grimer");
+        firstGenMapping.put("셀러", "shellder");
+        firstGenMapping.put("파르셀", "cloyster");
+        firstGenMapping.put("고오스", "gastly");
+        firstGenMapping.put("고우스트", "haunter");
+        firstGenMapping.put("팬텀", "gengar");
+        firstGenMapping.put("롱스톤", "onix");
+        firstGenMapping.put("슬리프", "drowzee");
+        firstGenMapping.put("슬리퍼", "hypno");
+        firstGenMapping.put("크랩", "krabby");
+        firstGenMapping.put("킹크랩", "kingler");
+        firstGenMapping.put("찌리리공", "voltorb");
+        firstGenMapping.put("붐볼", "electrode");
+        firstGenMapping.put("아라리", "exeggcute");
+        firstGenMapping.put("나시", "exeggutor");
+        firstGenMapping.put("탕구리", "cubone");
+        firstGenMapping.put("텅구리", "marowak");
+        firstGenMapping.put("시라소몬", "hitmonlee");
+        firstGenMapping.put("홍수몬", "hitmonchan");
+        firstGenMapping.put("내루미", "lickitung");
+        firstGenMapping.put("또가스", "koffing");
+        firstGenMapping.put("또도가스", "weezing");
+        firstGenMapping.put("뿔카노", "rhyhorn");
+        firstGenMapping.put("코뿌리", "rhydon");
+        firstGenMapping.put("럭키", "chansey");
+        firstGenMapping.put("덩구리", "tangela");
+        firstGenMapping.put("캥카", "kangaskhan");
+        firstGenMapping.put("쏘드라", "horsea");
+        firstGenMapping.put("시드라", "seadra");
+        firstGenMapping.put("콘치", "goldeen");
+        firstGenMapping.put("왕콘치", "seaking");
+        firstGenMapping.put("별가사리", "staryu");
+        firstGenMapping.put("아쿠스타", "starmie");
+        firstGenMapping.put("마임맨", "mr-mime");
+        firstGenMapping.put("스라크", "scyther");
+        firstGenMapping.put("루주라", "jynx");
+        firstGenMapping.put("에레브", "electabuzz");
+        firstGenMapping.put("마그마", "magmar");
+        firstGenMapping.put("쁘사이저", "pinsir");
+        firstGenMapping.put("켄타로스", "tauros");
+        firstGenMapping.put("잉어킹", "magikarp");
+        firstGenMapping.put("갸라도스", "gyarados");
+        firstGenMapping.put("라프라스", "lapras");
+        firstGenMapping.put("메타몽", "ditto");
+        firstGenMapping.put("이브이", "eevee");
+        firstGenMapping.put("샤미드", "vaporeon");
+        firstGenMapping.put("쥬피썬더", "jolteon");
+        firstGenMapping.put("부스터", "flareon");
+        firstGenMapping.put("폴리곤", "porygon");
+        firstGenMapping.put("암나이트", "omanyte");
+        firstGenMapping.put("암스타", "omastar");
+        firstGenMapping.put("투구", "kabuto");
+        firstGenMapping.put("투구푸스", "kabutops");
+        firstGenMapping.put("프테라", "aerodactyl");
+        firstGenMapping.put("잠만보", "snorlax");
+        firstGenMapping.put("프리져", "articuno");
+        firstGenMapping.put("썬더", "zapdos");
+        firstGenMapping.put("파이어", "moltres");
+        firstGenMapping.put("미뇽", "dratini");
+        firstGenMapping.put("신뇽", "dragonair");
+        firstGenMapping.put("망나뇽", "dragonite");
+        firstGenMapping.put("뮤츠", "mewtwo");
+        firstGenMapping.put("뮤", "mew");
+
+        return firstGenMapping.get(koreanName);
+    }
+
+    /**
+     * 이름 매핑을 DB에 저장 (캐싱)
+     */
+    private void saveNameMapping(String koreanName, String englishName) {
+        try {
+            // 포켓몬 ID 가져오기
+            Integer pokemonId = getPokemonIdFromName(englishName);
+            
+            if (pokemonId != null) {
+                PokemonNameMapping mapping = new PokemonNameMapping(koreanName, englishName, pokemonId);
+                pokemonNameMappingRepository.save(mapping);
+                logger.info("이름 매핑 캐싱 완료: {} -> {} (ID: {})", koreanName, englishName, pokemonId);
+            }
+        } catch (Exception e) {
+            logger.error("이름 매핑 저장 실패: {} -> {}, 오류: {}", koreanName, englishName, e.getMessage());
+        }
+    }
+
+    /**
+     * 영문 이름으로 포켓몬 ID 가져오기
+     */
+    private Integer getPokemonIdFromName(String englishName) {
+        try {
+            String response = webClient.get()
+                    .uri("/pokemon/{name}", englishName)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            if (response != null) {
+                logger.debug("Pokemon API 응답: {}", response.substring(0, Math.min(200, response.length())));
+                JsonNode root = objectMapper.readTree(response);
+                JsonNode idNode = root.get("id");
+                if (idNode != null) {
+                    return idNode.asInt();
+                }
+            }
+        } catch (Exception e) {
+            logger.error("포켓몬 ID 조회 실패: {}, 오류: {}", englishName, e.getMessage(), e);
+        }
+        return null;
+    }
+
+    /**
+     * 전체 포켓몬 목록을 DB에 미리 저장 (초기화용)
+     */
+    @PostConstruct
+    public void initializePokemonData() {
+        try {
+            // 이미 데이터가 있으면 스킵
+            if (pokemonNameMappingRepository.count() > 0) {
+                logger.info("이미 포켓몬 데이터가 초기화되어 있습니다. 스킵합니다.");
+                return;
+            }
+
+            logger.info("포켓몬 데이터 초기화 시작...");
+            
+            // 1세대 포켓몬 151마리 데이터 저장
+            Map<String, String> firstGenMapping = new HashMap<>();
+            firstGenMapping.put("꼬부기", "squirtle");
+            firstGenMapping.put("피카츄", "pikachu");
+            firstGenMapping.put("파이리", "charmander");
+            firstGenMapping.put("이상해씨", "bulbasaur");
+            firstGenMapping.put("라이츄", "raichu");
+            firstGenMapping.put("구구", "rattata");
+            firstGenMapping.put("레트라", "raticate");
+            firstGenMapping.put("아보", "ekans");
+            firstGenMapping.put("아보크", "arbok");
+            firstGenMapping.put("모래두지", "sandshrew");
+            firstGenMapping.put("고지", "sandslash");
+            firstGenMapping.put("니드런♀", "nidoran-f");
+            firstGenMapping.put("니드리나", "nidorina");
+            firstGenMapping.put("니드퀸", "nidoqueen");
+            firstGenMapping.put("니드런♂", "nidoran-m");
+            firstGenMapping.put("니드리노", "nidorino");
+            firstGenMapping.put("니드킹", "nidoking");
+            firstGenMapping.put("삐", "clefairy");
+            firstGenMapping.put("픽시", "clefable");
+            firstGenMapping.put("주뱃", "zubat");
+            firstGenMapping.put("골뱃", "golbat");
+            firstGenMapping.put("뚜벅쵸", "oddish");
+            firstGenMapping.put("냄새꼬", "gloom");
+            firstGenMapping.put("라플레시아", "vileplume");
+            firstGenMapping.put("파라스", "paras");
+            firstGenMapping.put("파라섹트", "parasect");
+            firstGenMapping.put("콘팡", "venonat");
+            firstGenMapping.put("도나리", "venomoth");
+            firstGenMapping.put("디그다", "diglett");
+            firstGenMapping.put("닥트리오", "dugtrio");
+            firstGenMapping.put("나옹", "meowth");
+            firstGenMapping.put("페르시온", "persian");
+            firstGenMapping.put("고라파덕", "psyduck");
+            firstGenMapping.put("골덕", "golduck");
+            firstGenMapping.put("망키", "mankey");
+            firstGenMapping.put("성원숭이", "primeape");
+            firstGenMapping.put("가디", "growlithe");
+            firstGenMapping.put("윈디", "arcanine");
+            firstGenMapping.put("발챙이", "poliwag");
+            firstGenMapping.put("슈륙챙이", "poliwhirl");
+            firstGenMapping.put("강챙이", "poliwrath");
+            firstGenMapping.put("케이시", "abra");
+            firstGenMapping.put("윤겔라", "kadabra");
+            firstGenMapping.put("후딘", "alakazam");
+            firstGenMapping.put("근육몬", "machop");
+            firstGenMapping.put("근육통", "machoke");
+            firstGenMapping.put("괴력몬", "machamp");
+            firstGenMapping.put("캐이시", "bellsprout");
+            firstGenMapping.put("우츠동", "weepinbell");
+            firstGenMapping.put("우츠보트", "victreebel");
+            firstGenMapping.put("딱충이", "tentacool");
+            firstGenMapping.put("슬리프", "tentacruel");
+            firstGenMapping.put("구렁이", "geodude");
+            firstGenMapping.put("데구리", "graveler");
+            firstGenMapping.put("딱구리", "golem");
+            firstGenMapping.put("포니타", "ponyta");
+            firstGenMapping.put("날쌩마", "rapidash");
+            firstGenMapping.put("야돈", "slowpoke");
+            firstGenMapping.put("야도란", "slowbro");
+            firstGenMapping.put("코일", "magnemite");
+            firstGenMapping.put("레어코일", "magneton");
+            firstGenMapping.put("파오리", "farfetchd");
+            firstGenMapping.put("두두", "doduo");
+            firstGenMapping.put("두트리오", "dodrio");
+            firstGenMapping.put("쥬쥬", "seel");
+            firstGenMapping.put("쥬레곤", "dewgong");
+            firstGenMapping.put("질뻐기", "grimer");
+            firstGenMapping.put("셀러", "shellder");
+            firstGenMapping.put("파르셀", "cloyster");
+            firstGenMapping.put("고오스", "gastly");
+            firstGenMapping.put("고우스트", "haunter");
+            firstGenMapping.put("팬텀", "gengar");
+            firstGenMapping.put("롱스톤", "onix");
+            firstGenMapping.put("슬리프", "drowzee");
+            firstGenMapping.put("슬리퍼", "hypno");
+            firstGenMapping.put("크랩", "krabby");
+            firstGenMapping.put("킹크랩", "kingler");
+            firstGenMapping.put("찌리리공", "voltorb");
+            firstGenMapping.put("붐볼", "electrode");
+            firstGenMapping.put("아라리", "exeggcute");
+            firstGenMapping.put("나시", "exeggutor");
+            firstGenMapping.put("탕구리", "cubone");
+            firstGenMapping.put("텅구리", "marowak");
+            firstGenMapping.put("시라소몬", "hitmonlee");
+            firstGenMapping.put("홍수몬", "hitmonchan");
+            firstGenMapping.put("내루미", "lickitung");
+            firstGenMapping.put("또가스", "koffing");
+            firstGenMapping.put("또도가스", "weezing");
+            firstGenMapping.put("뿔카노", "rhyhorn");
+            firstGenMapping.put("코뿌리", "rhydon");
+            firstGenMapping.put("럭키", "chansey");
+            firstGenMapping.put("덩구리", "tangela");
+            firstGenMapping.put("캥카", "kangaskhan");
+            firstGenMapping.put("쏘드라", "horsea");
+            firstGenMapping.put("시드라", "seadra");
+            firstGenMapping.put("콘치", "goldeen");
+            firstGenMapping.put("왕콘치", "seaking");
+            firstGenMapping.put("별가사리", "staryu");
+            firstGenMapping.put("아쿠스타", "starmie");
+            firstGenMapping.put("마임맨", "mr-mime");
+            firstGenMapping.put("스라크", "scyther");
+            firstGenMapping.put("루주라", "jynx");
+            firstGenMapping.put("에레브", "electabuzz");
+            firstGenMapping.put("마그마", "magmar");
+            firstGenMapping.put("쁘사이저", "pinsir");
+            firstGenMapping.put("켄타로스", "tauros");
+            firstGenMapping.put("잉어킹", "magikarp");
+            firstGenMapping.put("갸라도스", "gyarados");
+            firstGenMapping.put("라프라스", "lapras");
+            firstGenMapping.put("메타몽", "ditto");
+            firstGenMapping.put("이브이", "eevee");
+            firstGenMapping.put("샤미드", "vaporeon");
+            firstGenMapping.put("쥬피썬더", "jolteon");
+            firstGenMapping.put("부스터", "flareon");
+            firstGenMapping.put("폴리곤", "porygon");
+            firstGenMapping.put("암나이트", "omanyte");
+            firstGenMapping.put("암스타", "omastar");
+            firstGenMapping.put("투구", "kabuto");
+            firstGenMapping.put("투구푸스", "kabutops");
+            firstGenMapping.put("프테라", "aerodactyl");
+            firstGenMapping.put("잠만보", "snorlax");
+            firstGenMapping.put("프리져", "articuno");
+            firstGenMapping.put("썬더", "zapdos");
+            firstGenMapping.put("파이어", "moltres");
+            firstGenMapping.put("미뇽", "dratini");
+            firstGenMapping.put("신뇽", "dragonair");
+            firstGenMapping.put("망나뇽", "dragonite");
+            firstGenMapping.put("뮤츠", "mewtwo");
+            firstGenMapping.put("뮤", "mew");
+
+            // DB에 저장
+            for (Map.Entry<String, String> entry : firstGenMapping.entrySet()) {
+                String koreanName = entry.getKey();
+                String englishName = entry.getValue();
+                
+                // 포켓몬 ID 가져오기
+                Integer pokemonId = getPokemonIdFromName(englishName);
+                if (pokemonId != null) {
+                    PokemonNameMapping mapping = new PokemonNameMapping(koreanName, englishName, pokemonId);
+                    pokemonNameMappingRepository.save(mapping);
+                    logger.debug("포켓몬 매핑 저장: {} -> {} (ID: {})", koreanName, englishName, pokemonId);
+                }
+            }
+            
+            logger.info("포켓몬 데이터 초기화 완료: {} 마리", pokemonNameMappingRepository.count());
+            
+        } catch (Exception e) {
+            logger.error("포켓몬 데이터 초기화 실패: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
      * 영문 타입을 한글 타입으로 변환
      */
     private String convertEnglishTypeToKorean(String englishType) {
@@ -577,19 +1045,23 @@ private boolean isEnglishType(String type) {
     public EvolutionDTO getEvolutionChain(String name) {
         
         try {
+            // 한글 이름을 영문으로 변환
+            String englishName = convertKoreanToEnglish(name);
+            logger.info("진화체인 조회: 한글명 '{}' -> 영문명 '{}'", name, englishName);
+            
             // 포켓몬 species 정보 조회하여 진화체인 ID 찾기
-            Integer evolutionChainId = getEvolutionChainID(name);
+            Integer evolutionChainId = getEvolutionChainID(englishName);
 
             if (evolutionChainId == null) {
                 logger.warn("포켓몬'{}' 의 진화체인 ID를 찾을 수 없습니다", name);
                 return null;
             }
 
-            logger.info("진화체인 API 호출 시작: ID {}",name, evolutionChainId);
+            logger.info("진화체인 API 호출 시작: {} (ID: {})", englishName, evolutionChainId);
             EvolutionDTO evolutionChain = callEvolutionChain(evolutionChainId);
 
             if (evolutionChain != null) {
-                logger.info("진회체인 조회 성공 : {} (ID: {})", name, evolutionChainId);
+                logger.info("진화체인 조회 성공 : {} (ID: {})", englishName, evolutionChainId);
                 return evolutionChain;
             } else {
                 logger.warn("진화체인 API에서 데이터를 가져올 수 없음 : ID {}", evolutionChainId);
@@ -662,5 +1134,103 @@ private boolean isEnglishType(String type) {
     logger.error("진화체인 ID 조회중 오류 발생 - 포켓몬: {}, 오류: {}", name, e.getMessage(), e);
     return null;
    }
-}
+    }
+
+    /**
+     * PokeAPI에서 전체 포켓몬 데이터를 가져와서 DB에 초기화
+     * 
+     * @param limit 가져올 포켓몬 수
+     * @param offset 시작 위치
+     * @return 초기화 결과
+     */
+    public Map<String, Object> initializeAllPokemonsFromApi(int limit, int offset) {
+        Map<String, Object> result = new HashMap<>();
+        int successCount = 0;
+        int errorCount = 0;
+        List<String> errors = new ArrayList<>();
+        
+        try {
+            logger.info("PokeAPI에서 전체 포켓몬 목록 가져오기 시작: limit={}, offset={}", limit, offset);
+            
+            // 1단계: PokeAPI에서 포켓몬 목록 가져오기
+            String listResponse = webClient.get()
+                    .uri("/pokemon?limit={limit}&offset={offset}", limit, offset)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            if (listResponse == null) {
+                throw new RuntimeException("PokeAPI 목록 응답이 null입니다.");
+            }
+            
+            // 2단계: JSON 파싱
+            JsonNode listData;
+            try {
+                listData = objectMapper.readTree(listResponse);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("PokeAPI 응답 JSON 파싱 실패: " + e.getMessage(), e);
+            }
+            JsonNode results = listData.get("results");
+            
+            if (results == null || !results.isArray()) {
+                throw new RuntimeException("PokeAPI 응답에 results 배열이 없습니다.");
+            }
+            
+            logger.info("총 {}마리의 포켓몬을 처리합니다.", results.size());
+            
+            // 3단계: 각 포켓몬의 상세 정보를 순차적으로 가져오기
+            for (JsonNode pokemon : results) {
+                String pokemonName = pokemon.get("name").asText();
+                
+                try {
+                    logger.debug("포켓몬 처리 중: {}", pokemonName);
+                    
+                    // 이미 DB에 있는지 확인
+                    Optional<Pokemon> existingPokemon = pokemonRepository.findByName(pokemonName);
+                    if (existingPokemon.isPresent()) {
+                        logger.debug("포켓몬 {}은 이미 DB에 존재합니다. 스킵합니다.", pokemonName);
+                        successCount++;
+                        continue;
+                    }
+                    
+                    // PokeAPI에서 상세 정보 가져오기
+                    PokemonDTO pokemonDTO = callPokeApi(pokemonName);
+                    if (pokemonDTO != null) {
+                        // DB에 저장
+                        savePokemon(pokemonDTO);
+                        successCount++;
+                        logger.debug("포켓몬 {} 처리 완료", pokemonName);
+                    } else {
+                        errorCount++;
+                        String errorMsg = "포켓몬 " + pokemonName + " 상세 정보를 가져올 수 없습니다.";
+                        errors.add(errorMsg);
+                        logger.warn(errorMsg);
+                    }
+                    
+                    // API 호출 제한을 위한 짧은 대기
+                    Thread.sleep(100);
+                    
+                } catch (Exception e) {
+                    errorCount++;
+                    String errorMsg = "포켓몬 " + pokemonName + " 처리 중 오류: " + e.getMessage();
+                    errors.add(errorMsg);
+                    logger.error(errorMsg, e);
+                }
+            }
+            
+            logger.info("전체 포켓몬 초기화 완료: 성공={}, 실패={}", successCount, errorCount);
+            
+        } catch (Exception e) {
+            logger.error("전체 포켓몬 초기화 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
+        
+        // 결과 반환
+        result.put("successCount", successCount);
+        result.put("errorCount", errorCount);
+        result.put("errors", errors);
+        result.put("message", String.format("초기화 완료: 성공 %d개, 실패 %d개", successCount, errorCount));
+        
+        return result;
+    }
 }

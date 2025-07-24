@@ -106,7 +106,7 @@ SELECT 'Type Count', COUNT(*) FROM pokemon_type
 UNION ALL
 SELECT 'Stat Count', COUNT(*) FROM pokemon_stat
 UNION ALL
-SELECT 'Ability Count', COUNT(*) FROM pokemon_ability;
+SELECT 'Ability Count', COUNT(*) FROM pokemon_ability; 
 
 -- JSON 데이터 확인
 SELECT pokemon_id, name, types, stats, abilities FROM pokemon LIMIT 3; 

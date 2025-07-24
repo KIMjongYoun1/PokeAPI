@@ -140,7 +140,7 @@ GET /api/pokemon/all
     "stats": [...],
     "description": "피카츄는 전기 포켓몬입니다.",
     "abilities": ["static", "lightning-rod"]
-  }
+}
 ]
 ```
 
@@ -272,3 +272,8 @@ curl -X GET "http://localhost:8080/api/pokemon/search?name=pikachu" \
 - **Redis 캐싱**: 자주 조회되는 데이터 캐싱
 - **페이징**: 대용량 데이터 처리
 - **인덱스 최적화**: 데이터베이스 쿼리 성능 향상 
+
+## 🖥️ 프론트엔드 주요 컴포넌트와 API 연동 예시
+- **EvolutionChain, EvolutionChainTree**: /api/pokemon/{name}/evolution-chain API를 활용해 진화 트리 시각화 (구현 완료)
+- **StatComparisonChart**: /api/pokemon/advanced-search 등으로 여러 포켓몬의 능력치 비교 (구현 완료)
+- **PokemonGrid, PokemonCard**: /api/pokemon/all, /api/pokemon/{name} 등으로 전체 목록 및 상세 정보 표시 (구현 완료) 
