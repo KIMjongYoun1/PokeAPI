@@ -13,23 +13,18 @@ const EvolutionPage = () => {
   const fetchEvolutionChain = async (name: string) => {
     setLoading(true);
     setError('');
-    console.log(`진화체인 검색 시작: ${name}`);
     
     try {
       const response = await fetch(`http://localhost:8080/api/pokemon/${name}/evolution-chain`);
-      console.log(`진화체인 API 응답 상태: ${response.status}`);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('진화체인 데이터:', data);
         setEvolutionData(data);
       } else {
-        console.error(`진화체인 검색 실패: ${response.status} ${response.statusText}`);
         setError('진화 체인을 찾을 수 없습니다.');
         setEvolutionData(null);
       }
     } catch (err) {
-      console.error('진화체인 검색 중 오류:', err);
       setError('서버 연결에 실패했습니다.');
       setEvolutionData(null);
     } finally {
@@ -55,10 +50,10 @@ const EvolutionPage = () => {
         onSearchNameChange={setSearchName}
         onSearch={handleSearch}
       />
-
+      
       {loading && <LoadingSpinner message="진화 체인을 불러오는 중..." />}
       {error && <ErrorMessage message={error} onRetry={() => fetchEvolutionChain(searchName)} />}
-
+      
       {evolutionData && (
         <EvolutionChain 
           evolutionData={evolutionData}
