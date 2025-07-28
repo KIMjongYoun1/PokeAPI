@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS pokemon (
     stats TEXT, -- JSON 형태로 저장
     description TEXT,
     abilities TEXT, -- JSON 형태로 저장
+    generation INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -66,6 +67,7 @@ CREATE TABLE IF NOT EXISTS pokemon_ability (
 -- 인덱스 생성
 CREATE INDEX IF NOT EXISTS idx_pokemon_name ON pokemon(name);
 CREATE INDEX IF NOT EXISTS idx_pokemon_korean_name ON pokemon(korean_name);
+CREATE INDEX IF NOT EXISTS idx_pokemon_generation ON pokemon(generation);
 CREATE INDEX IF NOT EXISTS idx_pokemon_name_mapping_korean ON pokemon_name_mapping(korean_name);
 CREATE INDEX IF NOT EXISTS idx_pokemon_name_mapping_english ON pokemon_name_mapping(english_name);
 CREATE INDEX IF NOT EXISTS idx_pokemon_name_mapping_pokemon_id ON pokemon_name_mapping(pokemon_id);
@@ -99,6 +101,7 @@ ALTER TABLE pokemon ADD COLUMN korean_types TEXT;
 ALTER TABLE pokemon ADD COLUMN stats TEXT;
 ALTER TABLE pokemon ADD COLUMN description TEXT;
 ALTER TABLE pokemon ADD COLUMN abilities TEXT;
+ALTER TABLE pokemon ADD COLUMN generation INTEGER;
 ALTER TABLE pokemon RENAME COLUMN image_url TO sprite_url;
 ALTER TABLE pokemon RENAME COLUMN shiny_image_url TO shiny_sprite_url;
 

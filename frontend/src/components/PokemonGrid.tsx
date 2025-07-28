@@ -21,12 +21,12 @@ function PokemonGrid({ searchResults, onPokemonSelect }: PokemonGridProps) {
                 {searchResults.map((pokemon, index) => {
                     // 안전한 key 생성
                     const safeKey = pokemon.id || pokemon.pokemonId || pokemon.name || `pokemon-${index}`;
-                    console.log(`Pokemon key for ${pokemon.name}:`, safeKey);
+                    console.log(`Pokemon key for ${pokemon.koreanName}:`, safeKey);
                     
                     return (
                         <div key={safeKey} className="pokemon-grid-item" onClick={() => onPokemonSelect(pokemon)}>
-                        <img src={pokemon.spriteUrl} alt={pokemon.name} />
-                        <h3>{pokemon.name.toUpperCase()}</h3>
+                        <img src={pokemon.spriteUrl} alt={pokemon.koreanName} />
+                        <h3>{pokemon.koreanName.toUpperCase()}</h3>
                         <p>#{pokemon.pokemonId}</p>
                         <div className="types">
                             {pokemon.types.map((type, typeIndex) => (

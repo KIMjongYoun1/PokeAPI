@@ -23,6 +23,7 @@ public class PokemonDTO {
     private List<StatDTO> stats;
     private String description;
     private List<String> abilities;
+    private Integer generation;
 
     // Getter 메서드들
     public Long getId() { return id; }
@@ -40,6 +41,7 @@ public class PokemonDTO {
     public List<StatDTO> getStats() { return stats; }
     public String getDescription() { return description; }
     public List<String> getAbilities() { return abilities; }
+    public Integer getGeneration() { return generation; }
     
     // Setter 메서드들
     public void setId(Long id) { this.id = id; }
@@ -57,6 +59,7 @@ public class PokemonDTO {
     public void setStats(List<StatDTO> stats) { this.stats = stats; }
     public void setDescription(String description) { this.description = description; }
     public void setAbilities(List<String> abilities) { this.abilities = abilities; }
+    public void setGeneration(Integer generation) { this.generation = generation; }
 
 public static class StatDTO {
     private String name;

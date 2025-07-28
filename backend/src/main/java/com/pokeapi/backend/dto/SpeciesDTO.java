@@ -24,6 +24,9 @@ public class SpeciesDTO {
     @JsonProperty("evolution_chain")
     private ApiResourceDTO evolutionChain;
     
+    @JsonProperty("generation")
+    private ApiResourceDTO generation;
+    
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getName() { return name; }
@@ -34,6 +37,8 @@ public class SpeciesDTO {
     public void setFlavorTextEntries(List<FlavorTextEntryDTO> flavorTextEntries) { this.flavorTextEntries = flavorTextEntries; }
     public ApiResourceDTO getEvolutionChain() { return evolutionChain; }
     public void setEvolutionChain(ApiResourceDTO evolutionChain) { this.evolutionChain = evolutionChain; }
+    public ApiResourceDTO getGeneration() { return generation; }
+    public void setGeneration(ApiResourceDTO generation) { this.generation = generation; }
 
     /**
      * 포켓몬 이름 엔트리 DTO

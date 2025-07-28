@@ -90,10 +90,27 @@ cd backend
 mvn spring-boot:run
 ```
 
+### 2-1. 데이터베이스 제약조건 설정 (중요!)
+백엔드 서버 실행 전에 다음 SQL을 실행하여 null 값 허용 설정:
+```sql
+ALTER TABLE pokemon ALTER COLUMN sprite_url DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN shiny_sprite_url DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN korean_name DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN description DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN generation DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN official_artwork_url DROP NOT NULL;
+```
+
 ### 3. 프론트엔드 서버 실행
 ```bash
 cd frontend
 npm run dev
+```
+
+### 3-1. 전체 포켓몬 데이터 초기화 (선택사항)
+백엔드 서버 실행 후, 전체 포켓몬 데이터를 PokeAPI에서 가져오려면:
+```bash
+curl -X POST "http://localhost:8080/api/pokemon/initialize?limit=1302&offset=0"
 ```
 
 ## 📝 코딩 컨벤션

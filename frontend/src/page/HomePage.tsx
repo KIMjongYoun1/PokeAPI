@@ -34,7 +34,7 @@ const HomePage = ({ onPokemonSelect }: HomePageProps) => {
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [currentGeneration, setCurrentGeneration] = useState(1);
+  const [currentGeneration, setCurrentGeneration] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [hasNext, setHasNext] = useState(false);
@@ -57,11 +57,12 @@ const HomePage = ({ onPokemonSelect }: HomePageProps) => {
   });
 
   // 포켓몬 목록 로드
-  const loadPokemonList = async (page: number = 0, generation: number = 1) => {
+  const loadPokemonList = async (page: number = 0, generation: number = 0) => {
     setListLoading(true);
     setListError(null);
 
     try {
+      // generation이 0이면 전체 포켓몬 조회 (0으로 그대로 전송)
       const response = await fetch(
         `http://localhost:8080/api/pokemon/list?page=${page}&size=50&generation=${generation}`
       );
@@ -201,7 +202,13 @@ const HomePage = ({ onPokemonSelect }: HomePageProps) => {
         
         {/* 세대별 탭 */}
         <div className="generation-tabs">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((gen) => (
+          <button
+            className={`generation-tab ${currentGeneration === 0 ? 'active' : ''}`}
+            onClick={() => handleGenerationChange(0)}
+          >
+            전체
+          </button>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((gen) => (
             <button
               key={gen}
               className={`generation-tab ${currentGeneration === gen ? 'active' : ''}`}

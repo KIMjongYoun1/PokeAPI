@@ -73,6 +73,9 @@ public class Pokemon {
     @Column(name = "abilities", columnDefinition = "TEXT")
     private String abilities;
 
+    @Column(name = "generation")
+    private Integer generation;
+
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
@@ -104,9 +107,11 @@ public class Pokemon {
     public String getShinySpriteUrl() { return shinySpriteUrl; }
     public String getOfficialArtworkUrl() { return officialArtworkUrl; }
     public String getTypes() { return types; }
+    public String getKoreanTypes() { return koreanTypes; }
     public String getStats() { return stats; }
     public String getDescription() { return description; }
     public String getAbilities() { return abilities; }
+    public Integer getGeneration() { return generation; }
     public Date getCreatedAt() { return createdAt; }
     public Date getUpdatedAt() { return updatedAt; }
     
@@ -122,9 +127,11 @@ public class Pokemon {
     public void setShinySpriteUrl(String shinySpriteUrl) { this.shinySpriteUrl = shinySpriteUrl; }
     public void setOfficialArtworkUrl(String officialArtworkUrl) { this.officialArtworkUrl = officialArtworkUrl; }
     public void setTypes(String types) { this.types = types; }
+    public void setKoreanTypes(String koreanTypes) { this.koreanTypes = koreanTypes; }
     public void setStats(String stats) { this.stats = stats; }
     public void setDescription(String description) { this.description = description; }
     public void setAbilities(String abilities) { this.abilities = abilities; }
+    public void setGeneration(Integer generation) { this.generation = generation; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
     

@@ -25,9 +25,11 @@ export interface PokemonDTO {
     shinySpriteUrl: string;        // 샤이니 스프라이트 이미지 URL (희귀한 색상)
     officialArtworkUrl: string;    // 공식 일러스트 URL (큰 크기, 고화질)
     types: string[];               // 타입 배열 (예: ["Electric"], ["Fire", "Flying"])
+    koreanTypes: string[];         // 한글 타입 배열 (예: ["전기"], ["불꽃", "비행"])
     stats: StatDTO[];              // 능력치 배열 (HP, 공격, 방어, 특공, 특방, 속도)
     description: string;           // 포켓몬 설명 (한국어 또는 영문)
     abilities: string[];           // 특성 배열 (예: ["Static"], ["Blaze", "Solar Power"])
+    generation: number;            // 포켓몬 세대 (1~9, 1세대=1, 2세대=2, ...)
 }
 
 /**

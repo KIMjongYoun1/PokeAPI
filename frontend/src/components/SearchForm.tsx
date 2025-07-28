@@ -10,7 +10,7 @@ const SearchForm = ({ searchName, onSearchNameChange, onSearch }: SearchFormProp
             <input
                 type="text"
                 value={searchName}
-                onChange={(e) => onSearchNameChange(e. target.value)}
+                onChange={(e) => onSearchNameChange(e.target.value)}
                 placeholder="포켓몬 이름을 입력하세요 (예: pikachu, 피카츄)"
                 className="search-input"
                 />

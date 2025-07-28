@@ -49,6 +49,9 @@ PokeAPI/
 - ✅ PokemonController (REST API 엔드포인트)
 - ✅ WebClient 설정 (외부 PokéAPI 호출)
 - ✅ 데이터베이스 스키마 설계 및 구현
+- ✅ **API 호출 안정성 개선** (타임아웃, 재시도, 에러 핸들링)
+- ✅ **DNS 해석 최적화** (MacOS 지원)
+- ✅ **데이터베이스 제약조건 완화** (null 값 허용)
 
 ### Frontend (진행 중)
 - ✅ React + TypeScript 프로젝트 설정
@@ -83,6 +86,8 @@ PokeAPI/
 4. **포켓몬 상세 정보**: 이미지, 기본 정보, 타입, 특성, 능력치 표시
 5. **검색 결과 목록**: 그리드 형태로 검색 결과 표시
 6. **로딩/에러 처리**: 사용자 친화적인 상태 표시
+7. **전체 포켓몬 초기화**: PokeAPI에서 1,302마리 포켓몬 데이터 동기화 (`POST /api/pokemon/initialize`)
+8. **안정적인 API 호출**: 타임아웃, 재시도, 에러 핸들링으로 안정성 확보
 
 ### 📄 구현 예정 기능
 1. **능력치 비교**: 두 포켓몬의 능력치 비교 차트
@@ -94,7 +99,8 @@ PokeAPI/
 - [의존성 문서](./dependencies.md)
 - [데이터베이스 설계서](./database-design.md)
 - [API 문서](./api-documentation.md)
-- [개발 가이드](./development-guide.md) 
+- [개발 가이드](./development-guide.md)
+- [문제 해결 가이드](./troubleshooting.md) - **NEW!** 
 
 ## 🗄️ 데이터베이스 설정 및 동기화
 
@@ -122,7 +128,18 @@ psql -h localhost -U ryankim -d pokeapi -f database/sample-data.sql
 
 ### 3. DB 동기화 주의사항
 - application.properties의 DB 설정과 SQL 스크립트 실행 대상 DB가 반드시 pokeapi로 일치해야 함
-- DBeaver, DataGrip 등 DB 툴에서도 pokeapi DB로 연결해야 실제 데이터 확인 가능 
+- DBeaver, DataGrip 등 DB 툴에서도 pokeapi DB로 연결해야 실제 데이터 확인 가능
+
+### 4. 데이터베이스 제약조건 설정
+- 포켓몬 데이터 초기화 전에 다음 SQL을 실행하여 null 값 허용 설정:
+```sql
+ALTER TABLE pokemon ALTER COLUMN sprite_url DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN shiny_sprite_url DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN korean_name DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN description DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN generation DROP NOT NULL;
+ALTER TABLE pokemon ALTER COLUMN official_artwork_url DROP NOT NULL;
+``` 
 
 ## 🖥️ 프론트엔드 컴포넌트 전체 목록 및 역할 (모두 구현 완료)
 

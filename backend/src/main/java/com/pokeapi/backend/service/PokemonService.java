@@ -12,7 +12,6 @@ import com.pokeapi.backend.repository.PokemonNameMappingRepository;
 import com.pokeapi.backend.entity.PokemonNameMapping;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 import java.util.HashMap;
 import jakarta.annotation.PostConstruct;
+import java.time.Duration;
 
     
 
@@ -89,12 +89,45 @@ public class PokemonService {
     }
 
     /**
-     * 전체 포켓몬 목록 조회 (함수형 프로그래밍 스타일)
+     * 한글 이름으로 부분일치 검색
+     * @Param keyword 검색어
+     * @return  검색결과 리스트
+     * 
+     */
+    public List<PokemonDTO> searchByKoreanName(String keyword) {
+        List<Pokemon> pokemons = pokemonRepository.findByKoreanNameContaining(keyword);
+        return pokemons.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * 전체 포켓몬 목록 조회 (DB가 비어있으면 PokeAPI에서 초기화)
      * 
      * @return 전체 포켓몬 DTO 리스트
      */
     public List<PokemonDTO> getAllPokemons() {
         List<Pokemon> pokemons = pokemonRepository.findAll();
+        
+        // DB가 비어있으면 PokeAPI에서 전체 포켓몬 초기화
+        if (pokemons.isEmpty()) {
+            logger.info("DB가 비어있어서 전체 포켓몬을 PokeAPI에서 초기화합니다.");
+            try {
+                // PokeAPI 정보 조회로 전체 포켓몬 수 확인
+                Map<String, Object> apiInfo = getPokeApiInfo();
+                int totalCount = (Integer) apiInfo.get("totalPokemonCount");
+                
+                Map<String, Object> initResult = initializeAllPokemonsFromApi(totalCount, 0);
+                logger.info("전체 포켓몬 초기화 완료: {}", initResult.get("message"));
+                
+                // 초기화 후 다시 조회
+                pokemons = pokemonRepository.findAll();
+            } catch (Exception e) {
+                logger.error("포켓몬 초기화 실패: {}", e.getMessage(), e);
+                return new ArrayList<>();
+            }
+        }
+        
         // 함수형 프로그래밍: Entity → DTO 변환을 스트림으로 처리
         return pokemons.stream()
                 .map(this::convertToDTO) // 메서드 레퍼런스로 변환 함수 적용
@@ -111,24 +144,49 @@ public class PokemonService {
      */
     public Map<String, Object> getPokemonsWithPaging(int page, int size, int generation) {
         try {
-            // 세대별 포켓몬 ID 범위 정의
-            Map<Integer, int[]> generationRanges = new HashMap<>();
-            generationRanges.put(1, new int[]{1, 151});      // 1세대: 1-151
-            generationRanges.put(2, new int[]{152, 251});    // 2세대: 152-251
-            generationRanges.put(3, new int[]{252, 386});    // 3세대: 252-386
-            generationRanges.put(4, new int[]{387, 493});    // 4세대: 387-493
-            generationRanges.put(5, new int[]{494, 649});    // 5세대: 494-649
-            generationRanges.put(6, new int[]{650, 721});    // 6세대: 650-721
-            generationRanges.put(7, new int[]{722, 809});    // 7세대: 722-809
-            generationRanges.put(8, new int[]{810, 898});    // 8세대: 810-898
-            generationRanges.put(9, new int[]{899, 1010});   // 9세대: 899-1010
+            List<Pokemon> pokemons;
+            
+            // generation이 0이면 전체 포켓몬 조회
+            if (generation == 0) {
+                pokemons = pokemonRepository.findAll();
+                logger.info("전체 포켓몬 조회: 총 {}마리", pokemons.size());
+            } else {
+                // 세대별 포켓몬 ID 범위 정의
+                Map<Integer, int[]> generationRanges = new HashMap<>();
+                generationRanges.put(1, new int[]{1, 151});      // 1세대: 1-151
+                generationRanges.put(2, new int[]{152, 251});    // 2세대: 152-251
+                generationRanges.put(3, new int[]{252, 386});    // 3세대: 252-386
+                generationRanges.put(4, new int[]{387, 493});    // 4세대: 387-493
+                generationRanges.put(5, new int[]{494, 649});    // 5세대: 494-649
+                generationRanges.put(6, new int[]{650, 721});    // 6세대: 650-721
+                generationRanges.put(7, new int[]{722, 809});    // 7세대: 722-809
+                generationRanges.put(8, new int[]{810, 898});    // 8세대: 810-898
+                generationRanges.put(9, new int[]{899, 1010});   // 9세대: 899-1010
+                generationRanges.put(10, new int[]{1001, 1120}); // 10세대: 1001-1120
 
-            int[] range = generationRanges.getOrDefault(generation, new int[]{1, 151});
-            int startId = range[0];
-            int endId = range[1];
+                int[] range = generationRanges.getOrDefault(generation, new int[]{1, 151});
+                int startId = range[0];
+                int endId = range[1];
 
-            // 해당 세대의 포켓몬만 조회
-            List<Pokemon> pokemons = pokemonRepository.findByPokemonIdBetween(startId, endId);
+                // 해당 세대의 포켓몬만 조회
+                pokemons = pokemonRepository.findByPokemonIdBetween(startId, endId);
+                
+                // 해당 세대의 포켓몬이 없으면 PokeAPI에서 초기화
+                if (pokemons.isEmpty()) {
+                    logger.info("세대 {}의 포켓몬이 없어서 PokeAPI에서 초기화합니다.", generation);
+                    try {
+                        int limit = endId - startId + 1;
+                        Map<String, Object> initResult = initializeAllPokemonsFromApi(limit, startId - 1);
+                        logger.info("세대 {} 포켓몬 초기화 완료: {}", generation, initResult.get("message"));
+                        
+                        // 초기화 후 다시 조회
+                        pokemons = pokemonRepository.findByPokemonIdBetween(startId, endId);
+                    } catch (Exception e) {
+                        logger.error("세대 {} 포켓몬 초기화 실패: {}", generation, e.getMessage(), e);
+                        pokemons = new ArrayList<>();
+                    }
+                }
+            }
             
             // 페이징 처리
             int totalSize = pokemons.size();
@@ -281,53 +339,66 @@ public class PokemonService {
             String englishName = convertKoreanToEnglish(name);
             logger.info("PokéAPI 호출 시작: {} -> {}", name, englishName);
 
-            // 2단계: WebClient를 사용한 HTTP GET 요청 생성 (영문 이름 사용)
+            // 2단계: WebClient를 사용한 HTTP GET 요청 생성 (타임아웃 및 재시도 포함)
             String response = webClient.get()
                     .uri("/pokemon/{name}", englishName)
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(10))  // 10초 타임아웃
+                    .retryWhen(reactor.util.retry.Retry.backoff(3, Duration.ofSeconds(1)))  // 3번 재시도
                     .block();
 
-            // 3단계: 응답이 null이 아닌지 확인 (유효한 응답인지 검증)
-            if (response != null) {
+            // 3단계: 응답이 null이 아닌지 확인
+            if (response != null && !response.trim().isEmpty()) {
                 // 4단계: JSON 문자열을 타입 안전한 DTO로 변환
                 PokemonApiResponseDTO pokemonData = objectMapper.readValue(response, PokemonApiResponseDTO.class);
                 PokemonDTO pokemonDTO = new PokemonDTO();
 
-                // 기본정보 매핑
-                pokemonDTO.setPokemonId(pokemonData.getId());
-                pokemonDTO.setName(pokemonData.getName());
-                pokemonDTO.setBaseExperience(pokemonData.getBaseExperience());
-                pokemonDTO.setHeight(pokemonData.getHeight());
-                pokemonDTO.setWeight(pokemonData.getWeight());
+                // 기본정보 매핑 (null 체크 추가)
+                pokemonDTO.setPokemonId(pokemonData.getId() != null ? pokemonData.getId() : 0);
+                pokemonDTO.setName(pokemonData.getName() != null ? pokemonData.getName() : englishName);
+                pokemonDTO.setBaseExperience(pokemonData.getBaseExperience() != null ? pokemonData.getBaseExperience() : 0);
+                pokemonDTO.setHeight(pokemonData.getHeight() != null ? pokemonData.getHeight() : 0);
+                pokemonDTO.setWeight(pokemonData.getWeight() != null ? pokemonData.getWeight() : 0);
 
-                // 스프라이트Url 매핑
+                // 스프라이트Url 매핑 (null 허용)
                 if (pokemonData.getSprites() != null) {
                     pokemonDTO.setSpriteUrl(pokemonData.getSprites().getFrontDefault());
                     pokemonDTO.setShinySpriteUrl(pokemonData.getSprites().getFrontShiny());
+                } else {
+                    pokemonDTO.setSpriteUrl(null);
+                    pokemonDTO.setShinySpriteUrl(null);
                 }
 
-                // 타입 매핑
+                // 타입 매핑 (영문 + 한글 타입)
                 List<String> typeNames = new ArrayList<>();
+                List<String> koreanTypeNames = new ArrayList<>();
                 if (pokemonData.getTypes() != null) {
                     for (PokemonApiResponseDTO.TypeEntryDTO type : pokemonData.getTypes()) {
                         if (type.getType() != null) {
-                            typeNames.add(type.getType().getName());
+                            String englishType = type.getType().getName();
+                            String koreanType = convertEnglishTypeToKorean(englishType);
+                            
+                            typeNames.add(englishType);
+                            koreanTypeNames.add(koreanType);
                         }
                     }
                 }
                 pokemonDTO.setTypes(typeNames);
+                pokemonDTO.setKoreanTypes(koreanTypeNames);
 
                 // 능력치 정보 매핑
                 List<PokemonDTO.StatDTO> statDTOs = new ArrayList<>();
                 if (pokemonData.getStats() != null) {
                     for (PokemonApiResponseDTO.StatEntryDTO stat : pokemonData.getStats()) {
                         PokemonDTO.StatDTO statDTO = new PokemonDTO.StatDTO();
-                        statDTO.setBaseStat(stat.getBaseStat());
-                        statDTO.setEffort(stat.getEffort());
+                        statDTO.setBaseStat(stat.getBaseStat() != null ? stat.getBaseStat() : 0);
+                        statDTO.setEffort(stat.getEffort() != null ? stat.getEffort() : 0);
 
                         if (stat.getStat() != null) {
                             statDTO.setName(stat.getStat().getName());
+                        } else {
+                            statDTO.setName("unknown");
                         }
 
                         statDTOs.add(statDTO);
@@ -346,19 +417,48 @@ public class PokemonService {
                 }
                 pokemonDTO.setAbilities(abilityNames);
 
-                // 한글 이름과 설명 가져오기
-                String koreanName = getPokemonKoreanName(name);
+                // 한글 이름과 설명 가져오기 (에러 처리 개선)
+                String koreanName = getPokemonKoreanName(englishName);
+                if (koreanName == null || koreanName.isEmpty()) {
+                    koreanName = englishName; // 한글 이름이 없으면 영문 이름 사용
+                }
                 pokemonDTO.setKoreanName(koreanName);
-                String description = getPokemonDescription(name);
+                
+                String description = getPokemonDescription(englishName);
+                if (description == null || description.isEmpty()) {
+                    description = "설명 없음"; // 설명이 없으면 기본값 사용
+                }
                 pokemonDTO.setDescription(description);
                 
-                // 5단계: 성공 로그 기록
+                // 세대 정보 가져오기 (에러 처리 개선)
+                try {
+                    String speciesResponse = webClient.get()
+                            .uri("/pokemon-species/{name}", englishName)
+                            .retrieve()
+                            .bodyToMono(String.class)
+                            .timeout(Duration.ofSeconds(5))  // 더 짧은 타임아웃
+                            .retryWhen(reactor.util.retry.Retry.backoff(2, Duration.ofSeconds(1)))  // 2번 재시도
+                            .block();
+                    
+                    if (speciesResponse != null && !speciesResponse.trim().isEmpty()) {
+                        SpeciesDTO speciesData = objectMapper.readValue(speciesResponse, SpeciesDTO.class);
+                        if (speciesData.getGeneration() != null) {
+                            String generationName = speciesData.getGeneration().getName();
+                            int generationNumber = getGenerationNumber(generationName);
+                            logger.debug("포켓몬 {}의 세대: {} -> {}", englishName, generationName, generationNumber);
+                            pokemonDTO.setGeneration(generationNumber);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("포켓몬 {}의 세대 정보 가져오기 실패: {}", englishName, e.getMessage());
+                    pokemonDTO.setGeneration(0); // 기본값 설정
+                }
+                
                 logger.info("PokéAPI에서 {} 정보 성공적으로 가져옴", name);
-                // 디버깅용: DTO 값 확인
-                logger.debug("[callPokeApi] PokemonDTO 생성 결과: baseExp={}, height={}, weight={}, name={}",
-                    pokemonDTO.getBaseExperience(), pokemonDTO.getHeight(), pokemonDTO.getWeight(), pokemonDTO.getName());
-                // 6단계: 변환된 PokemonDTO 객체 반환
                 return pokemonDTO;
+            } else {
+                logger.error("PokéAPI 응답이 null이거나 비어있음: {}", name);
+                return null;
             }
 
         } catch (Exception e) {
@@ -386,13 +486,14 @@ public class PokemonService {
         dto.setHeight(entity.getHeight());
         dto.setWeight(entity.getWeight());
         dto.setTypes(convertJsonToList(entity.getTypes()));
-        // dto.setKoreanTypes(convertJsonToList(entity.getKoreanTypes())); // 수정
+        dto.setKoreanTypes(convertJsonToList(entity.getKoreanTypes()));
         dto.setAbilities(convertJsonToList(entity.getAbilities()));
         dto.setStats(convertJsonToStats(entity.getStats()));
         dto.setSpriteUrl(entity.getSpriteUrl());
         dto.setShinySpriteUrl(entity.getShinySpriteUrl());
         dto.setOfficialArtworkUrl(entity.getOfficialArtworkUrl()); // 추가
         dto.setDescription(entity.getDescription());               // 추가
+        dto.setGeneration(entity.getGeneration());                 // 추가
         return dto;
     }
 
@@ -411,17 +512,18 @@ public class PokemonService {
         pokemon.setHeight(dto.getHeight());
         pokemon.setWeight(dto.getWeight());
         pokemon.setTypes(convertListToJson(dto.getTypes()));
-        // pokemon.setKoreanTypes(convertListToJson(dto.getKoreanTypes()));
+        pokemon.setKoreanTypes(convertListToJson(dto.getKoreanTypes()));
         pokemon.setAbilities(convertListToJson(dto.getAbilities()));
         pokemon.setStats(convertStatsToJson(dto.getStats()));
         pokemon.setSpriteUrl(dto.getSpriteUrl());
         pokemon.setShinySpriteUrl(dto.getShinySpriteUrl());
         pokemon.setOfficialArtworkUrl(dto.getOfficialArtworkUrl());
         pokemon.setDescription(dto.getDescription());
+        pokemon.setGeneration(dto.getGeneration());
        
         // 디버깅용: Entity 값 확인
-        logger.debug("[convertToEntity] Entity 값: baseExp={}, height={}, weight={}, name={}",
-            dto.getBaseExperience(), dto.getHeight(), dto.getWeight(), dto.getName());
+        logger.debug("[convertToEntity] Entity 값: baseExp={}, height={}, weight={}, name={}, generation={}",
+            dto.getBaseExperience(), dto.getHeight(), dto.getWeight(), dto.getName(), dto.getGeneration());
         return pokemon;
     }
 
@@ -507,17 +609,17 @@ public class PokemonService {
      */
     private String getPokemonDescription(String name) {
         try {
-            logger.info("Species API 호출 시작: {}", name);
+            logger.debug("Species API 호출 시작: {}", name);
 
-            // 1단계 Species API 호출
             String response = webClient.get()
                     .uri("/pokemon-species/{name}", name)
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(15))  // 15초로 증가
+                    .retryWhen(reactor.util.retry.Retry.backoff(3, Duration.ofSeconds(2)))  // 3번 재시도, 2초 간격
                     .block();
 
-            // 2단계: 응답이 null이 아닌지 확인
-            if (response != null) {
+            if (response != null && !response.trim().isEmpty()) {
                 SpeciesDTO speciesData = objectMapper.readValue(response, SpeciesDTO.class);
 
                 // 3단계 flavor_text_entries 추출
@@ -540,18 +642,18 @@ public class PokemonService {
                     }
 
                     if (koDescription != null) {
-                        logger.info("Species API에서 {} 한국어 설명 가져옴 성공", name);
+                        logger.debug("Species API에서 {} 한국어 설명 가져옴 성공", name);
                         return koDescription;
                     } else if (enDescription != null) {
-                        logger.info("Species API에서 {} 영어 설명 가져옴 성공", name);
+                        logger.debug("Species API에서 {} 영어 설명 가져옴 성공", name);
                         return enDescription;
                     }
                 }
             }
         } catch (Exception e) {
-            logger.error("Species API 호출 실패 - 포켓몬: {}, 오류: {}", name, e.getMessage(), e);
+            logger.warn("Species API 호출 실패 - 포켓몬: {}, 오류: {}", name, e.getMessage());
         }
-        return "";
+        return "설명 없음";
     }
 
     /**
@@ -565,9 +667,11 @@ public class PokemonService {
                     .uri("/pokemon-species/{name}", name)
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(15))  // 15초로 증가
+                    .retryWhen(reactor.util.retry.Retry.backoff(3, Duration.ofSeconds(2)))  // 3번 재시도, 2초 간격
                     .block();
 
-            if (speciesResponse != null) {
+            if (speciesResponse != null && !speciesResponse.trim().isEmpty()) {
                 SpeciesDTO speciesData = objectMapper.readValue(speciesResponse, SpeciesDTO.class);
 
                 // 한글이름 추출
@@ -580,7 +684,7 @@ public class PokemonService {
                 }
             }
         } catch (Exception e) {
-            logger.error("Species API 호출 실패 - 포켓몬: {}, 오류: {}", name, e.getMessage(), e);
+            logger.warn("Species API 호출 실패 - 포켓몬: {}, 오류: {}", name, e.getMessage());
         }
         return "";
     }
@@ -1137,6 +1241,88 @@ private boolean isEnglishType(String type) {
     }
 
     /**
+     * PokeAPI 전체 포켓몬 정보 조회
+     * 
+     * @return PokeAPI 정보
+     */
+    public Map<String, Object> getPokeApiInfo() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            logger.info("PokeAPI 전체 포켓몬 정보 조회 시작");
+            
+            // PokeAPI에서 전체 포켓몬 목록 가져오기
+            String response = webClient.get()
+                    .uri("/pokemon?limit=1&offset=0")
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            
+            if (response != null) {
+                JsonNode data;
+                try {
+                    data = objectMapper.readTree(response);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException("PokeAPI 응답 JSON 파싱 실패: " + e.getMessage(), e);
+                }
+                
+                int totalCount = data.get("count").asInt();
+                String nextUrl = data.has("next") ? data.get("next").asText() : null;
+                String previousUrl = data.has("previous") ? data.get("previous").asText() : null;
+                
+                // 세대별 포켓몬 수 계산
+                Map<String, Object> generations = new HashMap<>();
+                generations.put("1세대", 151);
+                generations.put("2세대", 100);
+                generations.put("3세대", 135);
+                generations.put("4세대", 107);
+                generations.put("5세대", 156);
+                generations.put("6세대", 72);
+                generations.put("7세대", 88);
+                generations.put("8세대", 89);
+                generations.put("9세대", 112);
+                
+                result.put("totalPokemonCount", totalCount);
+                result.put("nextUrl", nextUrl);
+                result.put("previousUrl", previousUrl);
+                result.put("generations", generations);
+                result.put("message", String.format("PokeAPI에서 총 %d마리의 포켓몬을 제공합니다.", totalCount));
+                
+                logger.info("PokeAPI 정보 조회 완료: 총 {}마리", totalCount);
+            } else {
+                throw new RuntimeException("PokeAPI 응답이 null입니다.");
+            }
+            
+        } catch (Exception e) {
+            logger.error("PokeAPI 정보 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
+        
+        return result;
+    }
+
+    /**
+     * 세대 이름을 세대 번호로 변환
+     * 
+     * @param generationName 세대 이름 (예: "generation-i")
+     * @return 세대 번호 (1-9)
+     */
+    private int getGenerationNumber(String generationName) {
+        switch (generationName) {
+            case "generation-i": return 1;
+            case "generation-ii": return 2;
+            case "generation-iii": return 3;
+            case "generation-iv": return 4;
+            case "generation-v": return 5;
+            case "generation-vi": return 6;
+            case "generation-vii": return 7;
+            case "generation-viii": return 8;
+            case "generation-ix": return 9;
+            default: return 1; // 기본값
+        }
+    }
+
+    /**
      * PokeAPI에서 전체 포켓몬 데이터를 가져와서 DB에 초기화
      * 
      * @param limit 가져올 포켓몬 수
@@ -1207,8 +1393,8 @@ private boolean isEnglishType(String type) {
                         logger.warn(errorMsg);
                     }
                     
-                    // API 호출 제한을 위한 짧은 대기
-                    Thread.sleep(100);
+                    // API 호출 제한을 위한 짧은 대기 (더 짧게 조정)
+                    Thread.sleep(50);  // 100ms에서 50ms로 단축
                     
                 } catch (Exception e) {
                     errorCount++;

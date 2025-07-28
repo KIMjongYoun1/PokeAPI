@@ -49,6 +49,13 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
         
+        <!-- MacOS DNS 해결을 위한 의존성 -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-aarch_64</classifier>
+        </dependency>
+        
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

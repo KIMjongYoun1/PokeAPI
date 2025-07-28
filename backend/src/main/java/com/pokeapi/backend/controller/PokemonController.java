@@ -93,7 +93,7 @@ public class PokemonController {
     public ResponseEntity<Map<String, Object>> getAllPokemonsWithPaging(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "1") int generation) {
+            @RequestParam(defaultValue = "0") int generation) {
         
         try {
             logger.info("페이징 포켓몬 목록 조회 요청: page={}, size={}, generation={}", page, size, generation);
@@ -103,6 +103,23 @@ public class PokemonController {
             
         } catch (Exception e) {
             logger.error("페이징 포켓몬 목록 조회 중 오류 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * PokeAPI 전체 포켓몬 수 확인
+     */
+    @GetMapping("/api-info")
+    public ResponseEntity<Map<String, Object>> getPokeApiInfo() {
+        try {
+            logger.info("PokeAPI 정보 조회 요청");
+            Map<String, Object> result = pokemonService.getPokeApiInfo();
+            logger.info("PokeAPI 정보 조회 성공");
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            logger.error("PokeAPI 정보 조회 중 오류 발생: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -159,6 +176,28 @@ public class PokemonController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+/**
+ *한글 이름으로 부분일치 검색
+ *@param keyword 검색어
+ *@return 검색걸과 리스트
+ * 
+ */
+@GetMapping("/search/korean")
+public ResponseEntity<List<PokemonDTO>> searchByKoreanName(@RequestParam String keyword) {
+    try {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<PokemonDTO> results = pokemonService.searchByKoreanName(keyword.trim());
+        return ResponseEntity.ok(results);
+
+    } catch (Exception e) {
+       logger.error("한글 이름 부분일치 검색 중 오류 발생: {}", e.getMessage(), e);
+       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+}
 
     @GetMapping("/advanced-search")
     public ResponseEntity<List<PokemonDTO>> advancedSearch(

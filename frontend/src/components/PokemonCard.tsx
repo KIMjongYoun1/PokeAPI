@@ -15,16 +15,16 @@ function PokemonCard({ pokemon }: PokemonCardProps) {
             {/* 포켓몬 이미지  */}
             <div className="pokemon-images">
                 <div className="pokemon-image-container">
-                    <img src={pokemon.spriteUrl} alt={`${pokemon.name} sprite`} />
+                    <img src={pokemon.spriteUrl} alt={`${pokemon.koreanName} sprite`} />
                     <p>일반 스프라이트</p>
                 </div>
                 <div className="image-container">
-                    <img src={pokemon.shinySpriteUrl} alt={`${pokemon.name} shiny sprite`} />
+                    <img src={pokemon.shinySpriteUrl} alt={`${pokemon.koreanName} shiny sprite`} />
                     <p>샤인 스프라이트</p>
                 </div>
                 {pokemon.officialArtworkUrl && (
                     <div className="image-container">
-                        <img src={pokemon.officialArtworkUrl} alt={`${pokemon.name} official artwork`} />
+                        <img src={pokemon.officialArtworkUrl} alt={`${pokemon.koreanName} official artwork`} />
                         <p>공식 아트워크</p>
                     </div>
                 )}
