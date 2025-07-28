@@ -106,10 +106,10 @@ const HomePage = ({ onPokemonSelect }: HomePageProps) => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`http://localhost:8080/api/pokemon/${name}`);
+        const response = await fetch(`http://localhost:8080/api/pokemon/search/korean?keyword=${encodeURIComponent(name)}`);
       if (response.ok) {
         const data = await response.json();
-        setSearchResults([data]);
+        setSearchResults(data);
       } else {
         setError('포켓몬을 찾을 수 없습니다.');
         setSearchResults([]);
@@ -148,7 +148,7 @@ const HomePage = ({ onPokemonSelect }: HomePageProps) => {
   };
 
   useEffect(() => {
-    searchPokemon(searchName);
+    loadPokemonList();  // 포켓몬 목록만 로드, 자동 검색 제거
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
