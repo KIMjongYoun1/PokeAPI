@@ -41,7 +41,7 @@ const HomePageWrapper = () => {
   const navigate = useNavigate();
   
   const handlePokemonSelect = (pokemon: PokemonDTO) => {
-    navigate(`/pokemon/${pokemon.name}`);
+    navigate(`/pokemon/${pokemon.koreanName || pokemon.name}`);
   };
 
   return <HomePage onPokemonSelect={handlePokemonSelect} />;

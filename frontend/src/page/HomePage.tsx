@@ -157,7 +157,7 @@ const HomePage = ({ onPokemonSelect }: HomePageProps) => {
   };
 
   return (
-    <div className="home-page">
+    <>
       <h1>포켓몬 도감</h1>
       
       {/* 검색 섹션 */}
@@ -259,7 +259,7 @@ const HomePage = ({ onPokemonSelect }: HomePageProps) => {
           </>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

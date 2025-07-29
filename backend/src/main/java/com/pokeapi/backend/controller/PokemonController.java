@@ -42,27 +42,30 @@ public class PokemonController {
     @GetMapping("/{name}")
     public ResponseEntity<PokemonDTO> getPokemon(@PathVariable String name) {
         try {
+            // URL 디코딩 처리
+            String decodedName = java.net.URLDecoder.decode(name, "UTF-8");
+            
             // 1단계: 입력값 유효성 검사
-            if (name == null || name.trim().isEmpty()) {
+            if (decodedName == null || decodedName.trim().isEmpty()) {
                 logger.warn("포켓몬 이름이 비어있습니다.");
                 return ResponseEntity.badRequest().build();
             }
             
-            if (!POKEMON_NAME_PATTERN.matcher(name.trim()).matches()) {
-                logger.warn("잘못된 포켓몬 이름 형식: {}", name);
+            if (!POKEMON_NAME_PATTERN.matcher(decodedName.trim()).matches()) {
+                logger.warn("잘못된 포켓몬 이름 형식: {}", decodedName);
                 return ResponseEntity.badRequest().build();
             }
             
             // 2단계: 서비스 호출
-            logger.info("포켓몬 검색 요청: {}", name);
-            PokemonDTO pokemonDTO = pokemonService.searchPokemonName(name.trim());
+            logger.info("포켓몬 검색 요청: {} (원본: {})", decodedName, name);
+            PokemonDTO pokemonDTO = pokemonService.searchPokemonName(decodedName.trim());
             
             // 3단계: 결과 처리
             if (pokemonDTO != null) {
-                logger.info("포켓몬 검색 성공: {}", name);
+                logger.info("포켓몬 검색 성공: {}", decodedName);
                 return ResponseEntity.ok(pokemonDTO);
             } else {
-                logger.warn("포켓몬을 찾을 수 없음: {}", name);
+                logger.warn("포켓몬을 찾을 수 없음: {}", decodedName);
                 return ResponseEntity.notFound().build();
             }
             
@@ -298,28 +301,30 @@ public ResponseEntity<List<PokemonDTO>> searchByKoreanName(@RequestParam String 
  public ResponseEntity<EvolutionDTO> getEvolutionChain(@PathVariable String name) {
 
     try {
+        // URL 디코딩 처리
+        String decodedName = java.net.URLDecoder.decode(name, "UTF-8");
+        
         // 유효성 검사
-        if (name ==null || name.trim().isEmpty()) {
+        if (decodedName == null || decodedName.trim().isEmpty()) {
             logger.warn("포켓몬 이름이 비어있습니다");
             return ResponseEntity.badRequest().build();
-
         }
 
-        if (!POKEMON_NAME_PATTERN.matcher(name.trim()).matches()){
-            logger.warn("잘못된 포켓몬의 이름 입니다: {}", name);
+        if (!POKEMON_NAME_PATTERN.matcher(decodedName.trim()).matches()){
+            logger.warn("잘못된 포켓몬의 이름 입니다: {}", decodedName);
             return ResponseEntity.badRequest().build();
         }
 
         // 서비스호출
-        logger.info("포켓몬 진화체인 검색 시작: {}", name);
-        EvolutionDTO evolutionDTO = pokemonService.getEvolutionChain(name.trim());
+        logger.info("포켓몬 진화체인 검색 시작: {} (원본: {})", decodedName, name);
+        EvolutionDTO evolutionDTO = pokemonService.getEvolutionChain(decodedName.trim());
         
         // 결과 처리
         if (evolutionDTO != null) {
-            logger.info("포켓몬 진화 체인 검색 성공: {}", name);
+            logger.info("포켓몬 진화 체인 검색 성공: {}", decodedName);
             return ResponseEntity.ok(evolutionDTO);
         } else {
-            logger.warn("포켓몬 진화체인을 찾을 수 없음: {}:", name);
+            logger.warn("포켓몬 진화체인을 찾을 수 없음: {}", decodedName);
             return ResponseEntity.notFound().build();
         }
     } catch (Exception e) {

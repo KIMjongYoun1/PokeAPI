@@ -49,7 +49,7 @@ const ComparisonPage = () => {
         return;
     }
     
-    if (pokemons.find(p => p.name === pokemon.name)) {
+    if (pokemons.find(p => p.koreanName === pokemon.koreanName || p.name === pokemon.name)) {
       setError('이미 추가된 포켓몬입니다.');
       return;
     }
@@ -59,7 +59,7 @@ const ComparisonPage = () => {
   };
 
   const removePokemon = (name: string) => {
-    setPokemons(prev => prev.filter(p => p.name !== name));
+    setPokemons(prev => prev.filter(p => p.koreanName !== name && p.name !== name));
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -73,63 +73,78 @@ const ComparisonPage = () => {
     <div className="comparison-page">
       <h1>포켓몬 능력치 비교</h1>
       
-      <div className="search-section">
-        <h3>포켓몬 검색</h3>
-        <SearchForm
-          searchName={searchName}
-          onSearchNameChange={setSearchName}
-          onSearch={handleSearch}
-        />
-        
-        {searchLoading && <LoadingSpinner message="검색 중..." />}
-        {searchError && <ErrorMessage message={searchError} onRetry={() => setSearchError('')} />}
+      <div className="comparison-layout">
+        {/* 왼쪽: 검색 및 검색 결과 */}
+        <div className="search-panel">
+          <div className="search-section">
+            <h3>포켓몬 검색</h3>
+            <SearchForm
+              searchName={searchName}
+              onSearchNameChange={setSearchName}
+              onSearch={handleSearch}
+            />
             
-            {/**검색결과 */}
-            {searchResults.length > 0 && (
-                <div className="search-results">
-                    <h4>검색 결과 ({searchResults.length}개)</h4>
-                    <div className="search-results-grid">
-                        {searchResults.map((pokemon) => (
-                            <div key={pokemon.name} className="search-result-item">
-                                <PokemonCard pokemon={pokemon} />
-                                <button 
-                                onClick={() => addPokemon(pokemon)}
-                                disabled={pokemons.length >= MAX_COMPARISON_COUNT}
-                                className="add-button"> 추가</button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-      
-
-      {pokemons.length > 0 && (
-        <div className="comparison-section">
-          
-            <h3>비교 대상 ({pokemons.length}/{MAX_COMPARISON_COUNT})</h3>
-            <div className="comparison-pokemons">
-            {pokemons.map((pokemon) => (
-              <div key={pokemon.name} className="comparison-pokemon">
-                <PokemonCard pokemon={pokemon} />
-                <button onClick={() => removePokemon(pokemon.name)}
-                    className="remove-button">제거</button>
-              </div>
-            ))}
+            {searchLoading && <LoadingSpinner message="검색 중..." />}
+            {searchError && <ErrorMessage message={searchError} onRetry={() => setSearchError('')} />}
           </div>
           
-          <StatComparisonChart 
-            pokemons={pokemons}
-            maxStat={255}
-            showValues={true}
-            showPercentage={false}
-            height={400}
-            width="100%"
-          />
+          {/* 검색 결과 */}
+          {searchResults.length > 0 && (
+            <div className="search-results">
+              <h4>검색 결과 ({searchResults.length}개)</h4>
+              <div className="search-results-grid">
+                                        {searchResults.map((pokemon) => (
+                            <div key={pokemon.koreanName || pokemon.name} className="search-result-item">
+                    <PokemonCard pokemon={pokemon} />
+                    <button 
+                      onClick={() => addPokemon(pokemon)}
+                      disabled={pokemons.length >= MAX_COMPARISON_COUNT}
+                      className="add-button"
+                    >
+                      추가
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      {/**에러메세지 */}
+        {/* 오른쪽: 비교 대상 및 레이더 차트 */}
+        <div className="comparison-panel">
+          {pokemons.length > 0 && (
+            <div className="comparison-section">
+              <h3>비교 대상 ({pokemons.length}/{MAX_COMPARISON_COUNT})</h3>
+              <div className="comparison-pokemons">
+                            {pokemons.map((pokemon) => (
+              <div key={pokemon.koreanName || pokemon.name} className="comparison-pokemon">
+                <PokemonCard pokemon={pokemon} />
+                <button 
+                  onClick={() => removePokemon(pokemon.koreanName || pokemon.name)}
+                  className="remove-button"
+                >
+                  제거
+                </button>
+              </div>
+            ))}
+              </div>
+              
+              <div className="radar-chart-container">
+                <StatComparisonChart 
+                  pokemons={pokemons}
+                  maxStat={255}
+                  showValues={true}
+                  showPercentage={false}
+                  height={400}
+                  width="100%"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 에러메세지 */}
       {error && <ErrorMessage message={error} onRetry={() => setError('')} />}
     </div>
   );

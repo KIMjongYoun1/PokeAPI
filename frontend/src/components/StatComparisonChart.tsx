@@ -57,7 +57,7 @@ function StatComparisonChart({
                     const pokemonStat = pokemon.stats?.find(s => s.name === stat.name);
                     if (pokemonStat) {
                         dataPoint[`pokemon${index + 1}`] = pokemonStat.baseStat;
-                        dataPoint[`${pokemon.name} (${pokemonStat.baseStat})`] = pokemonStat.baseStat;
+                        dataPoint[`${pokemon.koreanName || pokemon.name} (${pokemonStat.baseStat})`] = pokemonStat.baseStat;
                     }
                 });
                 data.push(dataPoint);

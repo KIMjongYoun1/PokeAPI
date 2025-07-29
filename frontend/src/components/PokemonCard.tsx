@@ -8,7 +8,7 @@ function PokemonCard({ pokemon }: PokemonCardProps) {
     return (
         <div className="pokemon-card">
             <div className="pokemon-header">
-                <h2>{pokemon.name.toLocaleUpperCase()}</h2>
+                <h2>{(pokemon.koreanName || pokemon.name).toLocaleUpperCase()}</h2>
                 <div className="pokemon-id">#{pokemon.pokemonId}</div>
             </div>
 

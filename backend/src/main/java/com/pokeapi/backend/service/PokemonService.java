@@ -1149,11 +1149,21 @@ private boolean isEnglishType(String type) {
     public EvolutionDTO getEvolutionChain(String name) {
         
         try {
-            // 한글 이름을 영문으로 변환
-            String englishName = convertKoreanToEnglish(name);
-            logger.info("진화체인 조회: 한글명 '{}' -> 영문명 '{}'", name, englishName);
+            // 1단계: DB에서 한글명으로 포켓몬 조회
+            Optional<Pokemon> pokemonFromDB = pokemonRepository.findByKoreanName(name);
+            String englishName = name; // 기본값은 입력된 이름
             
-            // 포켓몬 species 정보 조회하여 진화체인 ID 찾기
+            if (pokemonFromDB.isPresent()) {
+                // DB에서 찾은 경우 영어명 사용
+                englishName = pokemonFromDB.get().getName();
+                logger.info("DB에서 한글명으로 포켓몬 찾음: '{}' -> '{}'", name, englishName);
+            } else {
+                // DB에서 못 찾은 경우 한글-영문 변환 시도
+                englishName = convertKoreanToEnglish(name);
+                logger.info("DB에서 못 찾아서 변환 시도: '{}' -> '{}'", name, englishName);
+            }
+            
+            // 2단계: 포켓몬 species 정보 조회하여 진화체인 ID 찾기
             Integer evolutionChainId = getEvolutionChainID(englishName);
 
             if (evolutionChainId == null) {
