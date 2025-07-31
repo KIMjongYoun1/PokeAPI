@@ -332,4 +332,28 @@ public ResponseEntity<List<PokemonDTO>> searchByKoreanName(@RequestParam String 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
  }
+
+ @GetMapping("/evolution-chain/search")
+ public ResponseEntity<List<PokemonDTO>> searchEvolutionChain(@RequestParam String keyword) {
+
+    try {
+        // 1단계: 입력값 유효성 검사
+        if (keyword == null || keyword.trim().isEmpty()) {
+            logger.warn("검색 키워드가 비어있습니다.");
+            return ResponseEntity.badRequest().build();
+        }
+
+        // 2단계: 서비스 호출
+        logger.info("진화체인 검색 요청: {}", keyword);
+        List<PokemonDTO> results = pokemonService.searchEvolutionChain(keyword.trim());
+        
+        // 3단계: 결과 처리
+        logger.info("진화체인 검색 성공: {}개 결과", results.size());
+        return ResponseEntity.ok(results);
+
+    } catch (Exception e) {
+        logger.error("진화체인 검색 중 오류 발생: {}, 오류: {}", keyword, e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+ }
 }

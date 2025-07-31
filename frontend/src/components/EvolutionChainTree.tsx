@@ -152,7 +152,7 @@ const EvolutionChainTree = ({ chain, currentPokemonName }: EvolutionChainTreePro
                                         </div>
                                         <div className="pokemon-sprite">
                                             <img 
-                                                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonId(pokemon.name)}.png`}
+                                                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png`}
                                                 alt={pokemon.name}
                                                 onError={(e) => {
                                                     e.currentTarget.src = 'https://via.placeholder.com/80x80?text=?';
@@ -174,41 +174,6 @@ const EvolutionChainTree = ({ chain, currentPokemonName }: EvolutionChainTreePro
     );
 };
 
-// 포켓몬 이름으로 ID를 가져오는 함수 (임시)
-const getPokemonId = (name: string): number => {
-    // 실제로는 백엔드에서 포켓몬 정보를 가져와야 하지만, 
-    // 여기서는 간단한 매핑을 사용
-    const pokemonIds: { [key: string]: number } = {
-        'squirtle': 7,
-        'wartortle': 8,
-        'blastoise': 9,
-        'charmander': 4,
-        'charmeleon': 5,
-        'charizard': 6,
-        'bulbasaur': 1,
-        'ivysaur': 2,
-        'venusaur': 3,
-        'pichu': 172,
-        'pikachu': 25,
-        'raichu': 26,
-        'caterpie': 10,
-        'metapod': 11,
-        'butterfree': 12,
-        'weedle': 13,
-        'kakuna': 14,
-        'beedrill': 15,
-        'pidgey': 16,
-        'pidgeotto': 17,
-        'pidgeot': 18,
-        'rattata': 19,
-        'raticate': 20,
-        'spearow': 21,
-        'fearow': 22,
-        'ekans': 23,
-        'arbok': 24,
-        // 필요한 포켓몬들을 추가
-    };
-    return pokemonIds[name.toLowerCase()] || 1;
-};
+
 
 export default EvolutionChainTree;

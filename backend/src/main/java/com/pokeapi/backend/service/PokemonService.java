@@ -1333,6 +1333,46 @@ private boolean isEnglishType(String type) {
     }
 
     /**
+     * 진화체인 검색 (한글 이름 유사일치)
+     * 
+     * @param keyword 검색 키워드
+     * @return 진화체인이 있는 포켓몬 목록
+     */
+    public List<PokemonDTO> searchEvolutionChain(String keyword) {
+        try {
+            logger.info("진화체인 검색 시작: {}", keyword);
+            
+            // 1단계: 한글 이름으로 유사일치 검색
+            List<Pokemon> pokemons = pokemonRepository.findByKoreanNameContaining(keyword);
+            logger.info("한글 이름 검색 결과: {}개", pokemons.size());
+            
+            // 2단계: 진화체인이 있는 포켓몬만 필터링
+            List<PokemonDTO> evolutionPokemons = new ArrayList<>();
+            
+            for (Pokemon pokemon : pokemons) {
+                try {
+                    // 진화체인 존재 여부 확인
+                    Integer evolutionChainId = getEvolutionChainID(pokemon.getName());
+                    if (evolutionChainId != null) {
+                        PokemonDTO pokemonDTO = convertToDTO(pokemon);
+                        evolutionPokemons.add(pokemonDTO);
+                        logger.debug("진화체인 확인: {} (ID: {})", pokemon.getName(), evolutionChainId);
+                    }
+                } catch (Exception e) {
+                    logger.warn("포켓몬 {}의 진화체인 확인 중 오류: {}", pokemon.getName(), e.getMessage());
+                }
+            }
+            
+            logger.info("진화체인 검색 완료: {}개 결과", evolutionPokemons.size());
+            return evolutionPokemons;
+            
+        } catch (Exception e) {
+            logger.error("진화체인 검색 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
      * PokeAPI에서 전체 포켓몬 데이터를 가져와서 DB에 초기화
      * 
      * @param limit 가져올 포켓몬 수
