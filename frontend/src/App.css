@@ -205,11 +205,13 @@
 }
 
 .type-badge, .ability-badge {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 12px;
   font-weight: bold;
   text-transform: uppercase;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .type-badge {
@@ -605,10 +607,118 @@
 .search-results {
   margin-top: 20px;
   width: 100%;
-  max-width: 95%;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
   text-align: center;
+}
+
+/* 진화체인 검색 결과 전용 스타일 */
+.evolution-search-results {
+  margin-top: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.evolution-search-results .pokemon-grid {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(200px, 1fr)) !important;
+  gap: 30px;
+  padding: 20px 0;
+  grid-auto-flow: row;
+  grid-auto-rows: auto;
+  align-items: start;
+}
+
+.evolution-search-results .pokemon-grid .pokemon-grid-item {
+  width: 100%;
+  height: auto;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  box-sizing: border-box;
+  overflow: visible;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .evolution-search-results .pokemon-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 15px;
+    padding: 15px 0;
+  }
+  
+  .evolution-pokemon-grid .pokemon-grid {
+    flex-direction: column;
+    overflow-x: visible;
+    gap: 20px;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .evolution-pokemon-item {
+    width: 100%;
+    min-width: auto;
+    max-width: 100%;
+    margin: 0;
+  }
+  
+  .evolution-search-results .pokemon-grid .pokemon-grid-item {
+    min-height: 200px;
+    padding: 10px;
+    overflow: visible;
+  }
+  
+  .evolution-pokemon-item .pokemon-card {
+    overflow: visible;
+    min-height: 250px;
+    padding: 15px;
+  }
+}
+
+/* 진화체인 페이지 전용 스타일 */
+.evolution-page {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.evolution-page .back-to-guide-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+}
+
+.evolution-page .back-to-guide-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .search-results h4 {
@@ -909,6 +1019,9 @@
 
 .evolution-pokemon-grid {
     margin-top: 20px;
+    width: 100%;
+    max-width: 100%;
+    padding: 0 20px;
 }
 
 .evolution-pokemon-grid h3 {
@@ -917,21 +1030,30 @@
     font-size: 18px;
     font-weight: 600;
     text-align: center;
+    width: 100%;
 }
 
 .evolution-pokemon-grid .pokemon-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    justify-items: center;
+    display: flex !important;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 30px;
+    justify-content: flex-start;
     max-width: 100%;
     margin: 0 auto;
+    padding: 20px 0;
+    align-items: flex-start;
+    width: 100%;
 }
 
 .evolution-pokemon-item {
     position: relative;
-    width: 100%;
-    max-width: 250px;
+    width: 260px;
+    min-width: 260px;
+    flex-shrink: 0;
+    height: auto;
+    box-sizing: border-box;
+    margin: 0 5px;
 }
 
 .evolution-pokemon-item .pokemon-card {
@@ -942,6 +1064,11 @@
     text-align: center;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    height: auto;
+    box-sizing: border-box;
+    overflow: visible;
+    min-height: 280px;
 }
 
 .evolution-pokemon-item .pokemon-card:hover {
@@ -955,9 +1082,12 @@
 
 .evolution-pokemon-item .pokemon-header h2 {
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     color: #495057;
     font-weight: 600;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
 }
 
 .current-badge {
@@ -975,9 +1105,11 @@
 }
 
 .evolution-pokemon-item .pokemon-sprite img {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     object-fit: contain;
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .evolution-pokemon-item .pokemon-info {
@@ -985,9 +1117,12 @@
 }
 
 .evolution-pokemon-item .pokemon-info p {
-    margin: 5px 0;
-    font-size: 14px;
+    margin: 3px 0;
+    font-size: 12px;
     color: #6c757d;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
 }
 
 .evolution-hint {
