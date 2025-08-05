@@ -23,10 +23,12 @@ PokeAPI/
 - **Build Tool**: Maven
 
 ### Frontend
-- **Framework**: React 18
+- **Framework**: React 19.1.0
 - **Language**: TypeScript
 - **Build Tool**: Vite
 - **Package Manager**: npm
+- **Routing**: React Router DOM
+- **Charts**: Recharts
 
 ## 📊 데이터 플로우
 1. **PokéAPI** → Spring Boot (데이터 수집)
@@ -52,29 +54,42 @@ PokeAPI/
 - ✅ **API 호출 안정성 개선** (타임아웃, 재시도, 에러 핸들링)
 - ✅ **DNS 해석 최적화** (MacOS 지원)
 - ✅ **데이터베이스 제약조건 완화** (null 값 허용)
+- ✅ **진화체인 API** (포켓몬 진화 정보 조회)
+- ✅ **포켓몬 상세 정보 API** (스프라이트, 설명 등)
 
-### Frontend (진행 중)
+### Frontend (완료)
 - ✅ React + TypeScript 프로젝트 설정
 - ✅ 기본 프로젝트 구조
-- ✅ TypeScript 타입 정의 (PokemonDTO, StatDTO 등)
-- ✅ API 호출 로직 (단일 검색, 고급 검색)
+- ✅ TypeScript 타입 정의 (PokemonDTO, StatDTO, EvolutionDTO 등)
+- ✅ API 호출 로직 (단일 검색, 고급 검색, 진화체인)
 - ✅ 상태 관리 (로딩, 에러, 검색 결과 등)
+- ✅ **라우팅 시스템** (React Router DOM)
+- ✅ **페이지 컴포넌트** (홈, 상세, 진화, 비교 페이지)
+- ✅ **진화체인 시각화** (트리 구조, 조건 표시)
+- ✅ **포켓몬 비교 기능** (능력치 차트, 다중 선택)
+- ✅ **전체 포켓몬 목록** (세대별, 그리드 형태)
+- ✅ **반응형 디자인** (모바일 대응)
 
-#### 컴포넌트 분리 현황
+#### 컴포넌트 분리 현황 (모두 완료)
 - ✅ **PokemonCard**: 포켓몬 상세 정보 표시 컴포넌트
 - ✅ **SearchForm**: 단일 검색 폼 컴포넌트
 - ✅ **SearchModeSelector**: 검색 모드 선택 컴포넌트
 - ✅ **AdvancedSearchForm**: 고급 검색 폼 컴포넌트
 - ✅ **LoadingSpinner**: 로딩 상태 표시 컴포넌트
 - ✅ **ErrorMessage**: 에러 메시지 표시 컴포넌트
-- 📄 **PokemonGrid**: 검색 결과 그리드 컴포넌트 (미완성)
-- 📄 **StatComparisonChart**: 능력치 비교 차트 (미완성)
-- 📄 **EvolutionChain**: 진화 체인 표시 (미완성)
+- ✅ **PokemonGrid**: 검색 결과 그리드 컴포넌트
+- ✅ **StatComparisonChart**: 능력치 비교 차트
+- ✅ **EvolutionChain**: 진화 체인 표시
+- ✅ **EvolutionChainTree**: 진화 트리 구조 재귀 렌더링
+- ✅ **EvolutionCondition**: 진화 조건 텍스트 변환
+- ✅ **PokemonNode**: 진화 트리 내 포켓몬 노드
+- ✅ **PokemonSprite**: 포켓몬 스프라이트 표시
 
 ### Database (완료)
 - ✅ PostgreSQL 데이터베이스 설정
 - ✅ pokemon 테이블 스키마
 - ✅ pokemon_type, pokemon_stat, pokemon_ability 테이블
+- ✅ pokemon_name_mapping 테이블 (한글명 매핑)
 - ✅ 샘플 데이터 및 테스트 데이터
 
 ## 🎯 주요 기능
@@ -88,19 +103,26 @@ PokeAPI/
 6. **로딩/에러 처리**: 사용자 친화적인 상태 표시
 7. **전체 포켓몬 초기화**: PokeAPI에서 1,302마리 포켓몬 데이터 동기화 (`POST /api/pokemon/initialize`)
 8. **안정적인 API 호출**: 타임아웃, 재시도, 에러 핸들링으로 안정성 확보
+9. **진화체인 조회**: 포켓몬의 진화 과정 시각화 (`GET /api/pokemon/{name}/evolution`)
+10. **포켓몬 비교**: 다중 포켓몬 능력치 비교 및 차트 표시
+11. **세대별 포켓몬 목록**: 1-9세대별 포켓몬 필터링
+12. **반응형 UI**: 모바일/데스크톱 대응
 
-### 📄 구현 예정 기능
-1. **능력치 비교**: 두 포켓몬의 능력치 비교 차트
-2. **진화 체인**: 포켓몬 진화 과정 시각화
-3. **즐겨찾기**: 사용자가 좋아하는 포켓몬 저장
-4. **페이지네이션**: 대량 데이터 처리
+### 🚧 구현 예정 기능 (월드컵 기능)
+1. **이상형 월드컵**: 투표 기반 포켓몬 선호도 조사
+2. **조건 설정**: 세대별/타입별 월드컵 조건 설정
+3. **결과 저장**: 이상형 월드컵 결과 데이터베이스 저장
+4. **통계 분석**: 포켓몬별 인기 순위 및 통계
+5. **결과 공유**: 이상형 월드컵 결과 링크 공유
+6. **실시간 통계**: 전체 사용자 투표 현황
+7. **배틀 토너먼트**: 타입 상성 기반 배틀 시뮬레이션 (최종 단계)
 
 ## 📚 문서 목록
 - [의존성 문서](./dependencies.md)
 - [데이터베이스 설계서](./database-design.md)
 - [API 문서](./api-documentation.md)
 - [개발 가이드](./development-guide.md)
-- [문제 해결 가이드](./troubleshooting.md) - **NEW!** 
+- [문제 해결 가이드](./troubleshooting.md)
 
 ## 🗄️ 데이터베이스 설정 및 동기화
 
@@ -139,39 +161,34 @@ ALTER TABLE pokemon ALTER COLUMN korean_name DROP NOT NULL;
 ALTER TABLE pokemon ALTER COLUMN description DROP NOT NULL;
 ALTER TABLE pokemon ALTER COLUMN generation DROP NOT NULL;
 ALTER TABLE pokemon ALTER COLUMN official_artwork_url DROP NOT NULL;
-``` 
+```
 
-## 🖥️ 프론트엔드 컴포넌트 전체 목록 및 역할 (모두 구현 완료)
+## 🎮 월드컵 기능 계획
 
-- **AdvancedSearchForm**: 고급 검색 조건 입력 폼 (구현 완료)
-- **ErrorMessage**: 에러 메시지 및 재시도 버튼 표시 (구현 완료)
-- **EvolutionChain**: 포켓몬 진화 체인 전체 시각화 (구현 완료)
-- **EvolutionChainTree**: 진화 트리 구조 재귀 렌더링 (구현 완료)
-- **EvolutionCondition**: 진화 조건 텍스트 변환 및 표시 (구현 완료)
-- **LoadingSpinner**: 로딩 상태 표시 (구현 완료)
-- **PokemonCard**: 포켓몬 상세 정보 카드 (구현 완료)
-- **PokemonGrid**: 전체 포켓몬 목록 그리드 (구현 완료)
-- **PokemonNode**: 진화 트리 내 포켓몬 노드 (구현 완료)
-- **PokemonSprite**: 포켓몬 이름으로 스프라이트 이미지 fetch 및 표시 (구현 완료)
-- **SearchForm**: 단일 검색 입력 폼 (구현 완료)
-- **SearchModeSelector**: 단일/고급 검색 모드 전환 버튼 (구현 완료)
-- **StatComparisonChart**: 포켓몬 능력치 비교 차트 (구현 완료)
+### 📋 추가될 기능들
+1. **이상형 월드컵 기본 기능**: 포켓몬 투표 시스템, 조건 설정
+2. **이상형 월드컵 결과 관리**: 월드컵 결과 저장, 히스토리 조회
+3. **이상형 월드컵 통계 분석**: 포켓몬별 인기 순위, 우승 통계
+4. **소셜 기능**: 결과 공유, 실시간 통계
+5. **배틀 토너먼트 기능**: 타입 상성 기반 배틀 시뮬레이션 (최종 단계)
 
-### UI/UX 특징
-- 모든 컴포넌트는 props 기반으로 재사용성 높게 설계 (구현 완료)
-- 로딩/에러/데이터 없음 등 상태별 UI 처리 (구현 완료)
-- 클릭/선택 등 사용자 상호작용 지원 (구현 완료)
-- 진화 트리, 능력치 차트 등 시각화 컴포넌트 포함 (구현 완료)
+### 🏗️ 작업 내용
+- **백엔드**: 이상형 월드컵 관련 Entity, DTO, Repository, Service, Controller
+- **프론트엔드**: 이상형 월드컵 페이지, 조건 설정 UI, 진행 화면, 결과 표시
+- **데이터베이스**: 이상형 월드컵 결과, 통계 테이블 (기존 pokemon 테이블과 분리)
+- **배틀 시스템**: 배틀 토너먼트 관련 테이블 및 API (최종 단계)
 
-### 구현된 주요 기능
-- 전체 포켓몬 목록(이름+사진+타입) 그리드로 표시 (구현 완료)
-- 포켓몬 클릭 시 상세 정보(카드)로 전환 (구현 완료)
-- 단일/고급 검색, 검색 결과 그리드 표시 (구현 완료)
-- 상세 정보: 이름, 번호, 이미지(일반/샤이니/공식), 타입, 특성, 능력치 등 (구현 완료)
-- 진화 트리, 능력치 비교 등 부가 기능도 모두 구현 완료 
+### 📅 작업 순서
+1. **이상형 월드컵 기본 기능**: 백엔드 구조 → 프론트엔드 페이지 → 투표 시스템
+2. **이상형 월드컵 결과 관리**: 결과 저장 → 결과 표시 → 히스토리
+3. **이상형 월드컵 통계 기능**: 통계 계산 → 인기 순위 → 대시보드
+4. **소셜 기능**: 링크 공유 → 실시간 통계 → 최적화
+5. **배틀 토너먼트 기능**: 배틀 시스템 → 배틀 토너먼트 → 배틀 통계 (최종 단계)
 
-### 추가 구현 컴포넌트 (모두 구현 완료)
-- **EvolutionChainTree**: 진화 트리 구조를 재귀적으로 시각화 (구현 완료)
-- **EvolutionCondition**: 진화 조건을 텍스트로 변환해 표시 (구현 완료)
-- **PokemonNode**: 진화 트리 내 각 포켓몬 노드(이름, 스프라이트, 진화조건, 현재 포켓몬 강조) (구현 완료)
-- **PokemonSprite**: 포켓몬 이름으로 스프라이트 이미지를 fetch 및 표시 (구현 완료) 
+### 🎯 핵심 특징
+- **단일 페이지**: 조건 설정 → 월드컵 진행 → 결과 표시
+- **간단한 카드**: 이미지 + 이름 + 타입 + 설명(있는 경우만)
+- **조건 제한**: 최대 2개 조건 (세대 + 타입)
+- **설명 필터링**: 설명이 없는 포켓몬도 참가 가능 (설명란만 숨김)
+- **데이터베이스 분리**: 이상형 월드컵과 배틀 토너먼트 테이블을 기존 pokemon 테이블과 분리
+- **배틀 시스템**: 타입 상성 기반 배틀 토너먼트 (최종 단계) 

@@ -76,7 +76,7 @@ GET /api/pokemon/{name}
 GET /api/pokemon/advanced-search
 ```
 
-#### 1.3 전체 포켓몬 초기화 (구현됨) - **NEW!**
+#### 1.3 전체 포켓몬 초기화 (구현됨)
 ```
 POST /api/pokemon/initialize
 ```
@@ -100,141 +100,287 @@ POST /api/pokemon/initialize
 }
 ```
 
-**주의사항:**
-- 이 API는 PokeAPI에서 전체 포켓몬 데이터를 가져와서 데이터베이스에 저장합니다
-- 실행 시간이 오래 걸릴 수 있습니다 (약 5-10분)
-- 이미 존재하는 포켓몬은 스킵됩니다
-- API 호출 제한을 위해 포켓몬 간 50ms 대기합니다
+#### 1.4 진화체인 조회 (구현됨) - **NEW!**
+```
+GET /api/pokemon/{name}/evolution
+```
 
-**쿼리 파라미터:**
+**경로 파라미터:**
 | 파라미터 | 타입 | 필수 | 설명 |
 |----------|------|------|------|
-| type | String | N | 포켓몬 타입 (예: Electric, Fire) |
-| minHeight | Integer | N | 최소 키 (cm) |
-| maxHeight | Integer | N | 최대 키 (cm) |
-| minWeight | Integer | N | 최소 몸무게 (g) |
-| maxWeight | Integer | N | 최대 몸무게 (g) |
-| minAttack | Integer | N | 최소 공격력 |
-| maxAttack | Integer | N | 최대 공격력 |
-| minDefense | Integer | N | 최소 방어력 |
-| maxDefense | Integer | N | 최대 방어력 |
-| minHp | Integer | N | 최소 HP |
-| maxHp | Integer | N | 최대 HP |
-| minSpeed | Integer | N | 최소 속도 |
-| maxSpeed | Integer | N | 최대 속도 |
+| name | String | Y | 진화체인을 조회할 포켓몬 이름 |
+
+**응답 예시:**
+```json
+{
+  "chain": {
+    "species": {
+      "name": "bulbasaur",
+      "url": "https://pokeapi.co/api/v2/pokemon-species/1/"
+    },
+    "evolution_details": [],
+    "evolves_to": [
+      {
+        "species": {
+          "name": "ivysaur",
+          "url": "https://pokeapi.co/api/v2/pokemon-species/2/"
+        },
+        "evolution_details": [
+          {
+            "min_level": 16,
+            "trigger": {
+              "name": "level-up",
+              "url": "https://pokeapi.co/api/v2/evolution-trigger/1/"
+            }
+          }
+        ],
+        "evolves_to": [
+          {
+            "species": {
+              "name": "venusaur",
+              "url": "https://pokeapi.co/api/v2/pokemon-species/3/"
+            },
+            "evolution_details": [
+              {
+                "min_level": 32,
+                "trigger": {
+                  "name": "level-up",
+                  "url": "https://pokeapi.co/api/v2/evolution-trigger/1/"
+                }
+              }
+            ],
+            "evolves_to": []
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 2. 이상형 월드컵 관련 API (계획)
+
+#### 2.1 이상형 월드컵 참가자 선정 (계획)
+```
+POST /api/worldcup/participants
+```
+
+**요청 본문:**
+```json
+{
+  "generation": "1",
+  "type": "fire",
+  "participantCount": 16
+}
+```
 
 **응답 예시:**
 ```json
 [
   {
-    "id": 1,
-    "pokemonId": 25,
-    "name": "pikachu",
-    "koreanName": "피카츄",
-    "baseExperience": 112,
-    "height": 4,
-    "weight": 60,
-    "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png",
-    "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/25.png",
-    "officialArtworkUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/other/official-artwork/25.png",
-    "types": ["electric"],
-    "koreanTypes": ["전기"],
-    "stats": [...],
-    "description": "피카츄는 전기 포켓몬입니다.",
-    "abilities": ["static", "lightning-rod"]
+    "id": 4,
+    "name": "charmander",
+    "koreanName": "파이리",
+    "types": ["fire"],
+    "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png",
+    "description": "태어날 때부터 등에 불꽃이 있어, 몸과 함께 자라면서 발달한다."
   }
 ]
 ```
 
-#### 1.3 전체 포켓몬 목록 조회 (구현됨)
+#### 2.2 이상형 월드컵 결과 저장 (계획)
 ```
-GET /api/pokemon/all
+POST /api/worldcup/results
+```
+
+**요청 본문:**
+```json
+{
+  "tournamentId": "worldcup-12345",
+  "title": "1세대 불꽃 타입 이상형 월드컵",
+  "tournamentType": "vote", // 이상형 투표
+  "conditions": {
+    "generation": "1",
+    "type": "fire",
+    "participantCount": 16
+  },
+  "participants": [...],
+  "finalRanking": [...],
+  "winner": {
+    "id": 6,
+    "name": "charizard",
+    "koreanName": "리자몽"
+  }
+}
+```
+
+#### 2.3 이상형 월드컵 결과 조회 (계획)
+```
+GET /api/worldcup/results/{tournamentId}
+```
+
+#### 2.4 이상형 월드컵 인기 포켓몬 통계 (계획)
+```
+GET /api/worldcup/statistics/popular
 ```
 
 **응답 예시:**
 ```json
 [
   {
-    "id": 1,
     "pokemonId": 25,
-    "name": "pikachu",
-    "koreanName": "피카츄",
-    "baseExperience": 112,
-    "height": 4,
-    "weight": 60,
-    "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png",
-    "shinySpriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/25.png",
-    "officialArtworkUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/other/official-artwork/25.png",
-    "types": ["electric"],
-    "koreanTypes": ["전기"],
-    "stats": [...],
-    "description": "피카츄는 전기 포켓몬입니다.",
-    "abilities": ["static", "lightning-rod"]
-}
+    "pokemonName": "피카츄",
+    "totalParticipations": 150,
+    "totalWins": 45,
+    "totalTop3": 89,
+    "averageRank": 2.1,
+    "imageUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+  }
 ]
 ```
 
-#### 1.4 포켓몬 검색 (쿼리 파라미터) (구현됨)
+#### 2.5 최근 이상형 월드컵 결과 (계획)
 ```
-GET /api/pokemon/search?name={name}
-```
-
-**쿼리 파라미터:**
-| 파라미터 | 타입 | 필수 | 설명 |
-|----------|------|------|------|
-| name | String | Y | 검색할 포켓몬 이름 |
-
-**응답 예시:** (1.1과 동일한 PokemonDTO 구조)
-
-### 2. 구현 예정 API
-
-#### 2.1 포켓몬 상세 조회 (ID 기반)
-```
-GET /api/pokemon/{id}
+GET /api/worldcup/results/recent
 ```
 
-#### 2.2 타입별 포켓몬 조회
+### 3. 배틀 토너먼트 관련 API (최종 단계 계획)
+
+#### 3.1 배틀 토너먼트 참가자 선정 (최종 단계)
 ```
-GET /api/pokemon/type/{typeName}
+POST /api/battle/participants
 ```
 
-#### 2.3 데이터 동기화
-```
-POST /api/pokemon/sync
-```
-
-## 🔧 에러 응답
-
-### 400 Bad Request
+**요청 본문:**
 ```json
 {
-  "timestamp": "2024-01-01T12:00:00",
-  "status": 400,
-  "error": "Bad Request",
-  "message": "잘못된 요청입니다.",
-  "path": "/api/pokemon"
+  "generation": "1",
+  "type": "fire",
+  "participantCount": 16
 }
 ```
 
-### 404 Not Found
+#### 3.2 배틀 토너먼트 결과 저장 (최종 단계)
+```
+POST /api/battle/tournament/results
+```
+
+**요청 본문:**
 ```json
 {
-  "timestamp": "2024-01-01T12:00:00",
+  "tournamentId": "battle-12345",
+  "title": "1세대 불꽃 타입 배틀 토너먼트",
+  "tournamentType": "battle", // 배틀 토너먼트
+  "conditions": {
+    "generation": "1",
+    "type": "fire",
+    "participantCount": 16
+  },
+  "participants": [...],
+  "finalRanking": [...],
+  "winner": {
+    "id": 6,
+    "name": "charizard",
+    "koreanName": "리자몽"
+  },
+  "totalMatches": 15
+}
+```
+
+#### 3.3 포켓몬 간 배틀 시뮬레이션 (최종 단계)
+```
+POST /api/battle/simulate
+```
+
+**요청 본문:**
+```json
+{
+  "pokemon1Id": 25,
+  "pokemon2Id": 4,
+  "battleType": "simple" // "simple", "detailed"
+}
+```
+
+**응답 예시:**
+```json
+{
+  "winner": {
+    "id": 25,
+    "name": "pikachu",
+    "koreanName": "피카츄"
+  },
+  "loser": {
+    "id": 4,
+    "name": "charmander",
+    "koreanName": "파이리"
+  },
+  "typeAdvantage": {
+    "pokemon1Advantage": 1.0,
+    "pokemon2Advantage": 0.5,
+    "advantageReason": "전기 타입이 불꽃 타입에 효과적"
+  },
+  "statComparison": {
+    "pokemon1Total": 320,
+    "pokemon2Total": 309,
+    "statBreakdown": {...}
+  },
+  "battleLog": [
+    "피카츄가 전기 공격을 사용했습니다!",
+    "파이리가 효과를 받았습니다!",
+    "피카츄가 승리했습니다!"
+  ]
+}
+```
+
+#### 3.4 배틀 토너먼트 결과 조회 (최종 단계)
+```
+GET /api/battle/tournament/results/{tournamentId}
+```
+
+#### 3.5 배틀 통계 조회 (최종 단계)
+```
+GET /api/battle/statistics/{pokemonId}
+```
+
+**응답 예시:**
+```json
+{
+  "pokemonId": 25,
+  "pokemonName": "피카츄",
+  "totalBattles": 150,
+  "wins": 120,
+  "losses": 30,
+  "winRate": 0.8,
+  "averageBattleScore": 85.5,
+  "strongAgainst": ["water", "flying"],
+  "weakAgainst": ["ground", "grass"]
+}
+```
+
+## 🔧 에러 응답 형식
+
+### 일반적인 에러 응답
+```json
+{
+  "timestamp": "2024-01-15T10:30:00",
   "status": 404,
   "error": "Not Found",
-  "message": "포켓몬을 찾을 수 없습니다.",
-  "path": "/api/pokemon/9999"
+  "message": "포켓몬을 찾을 수 없습니다: pikachu",
+  "path": "/api/pokemon/pikachu"
 }
 ```
 
-### 500 Internal Server Error
+### 검증 에러 응답
 ```json
 {
-  "timestamp": "2024-01-01T12:00:00",
-  "status": 500,
-  "error": "Internal Server Error",
-  "message": "서버 내부 오류가 발생했습니다.",
-  "path": "/api/pokemon"
+  "timestamp": "2024-01-15T10:30:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "검증 실패",
+  "errors": [
+    "이름은 필수입니다",
+    "이름은 2-50자 사이여야 합니다"
+  ]
 }
 ```
 
@@ -245,65 +391,33 @@ POST /api/pokemon/sync
 | 200 | 성공 |
 | 201 | 생성됨 |
 | 400 | 잘못된 요청 |
-| 404 | 리소스를 찾을 수 없음 |
+| 404 | 찾을 수 없음 |
 | 500 | 서버 내부 오류 |
 
-## 🔍 API 테스트
+## 🚀 사용 예시
 
 ### cURL 예시
-
-#### 포켓몬 이름으로 검색
 ```bash
-curl -X GET "http://localhost:8080/api/pokemon/pikachu" \
-  -H "Content-Type: application/json"
+# 포켓몬 검색
+curl -X GET "http://localhost:8080/api/pokemon/pikachu"
+
+# 고급 검색
+curl -X GET "http://localhost:8080/api/pokemon/advanced-search?type=fire&minHeight=50"
+
+# 진화체인 조회
+curl -X GET "http://localhost:8080/api/pokemon/bulbasaur/evolution"
+
+# 포켓몬 초기화
+curl -X POST "http://localhost:8080/api/pokemon/initialize?limit=100"
 ```
 
-#### 고급 검색
-```bash
-curl -X GET "http://localhost:8080/api/pokemon/advanced-search?type=Electric&minHeight=1&maxHeight=10" \
-  -H "Content-Type: application/json"
-```
+### JavaScript 예시
+```javascript
+// 포켓몬 검색
+const response = await fetch('/api/pokemon/pikachu');
+const pokemon = await response.json();
 
-#### 전체 포켓몬 목록
-```bash
-curl -X GET "http://localhost:8080/api/pokemon/all" \
-  -H "Content-Type: application/json"
-```
-
-#### 쿼리 파라미터로 검색
-```bash
-curl -X GET "http://localhost:8080/api/pokemon/search?name=pikachu" \
-  -H "Content-Type: application/json"
-```
-
-## 📝 구현 현황
-
-### ✅ 현재 구현 완료
-- 포켓몬 이름으로 검색 (`GET /api/pokemon/{name}`)
-- 고급 검색 (`GET /api/pokemon/advanced-search`)
-- 전체 포켓몬 목록 조회 (`GET /api/pokemon/all`)
-- 쿼리 파라미터 검색 (`GET /api/pokemon/search?name={name}`)
-
-### 📄 구현 예정 기능
-- 포켓몬 ID로 상세 조회
-- 타입별 포켓몬 조회
-- 데이터 동기화 API
-- 페이지네이션 지원
-
-## 🚀 성능 최적화
-
-### ✅ 현재 적용된 최적화
-- **데이터베이스 캐싱**: 외부 API 호출 결과를 DB에 저장
-- **조건부 API 호출**: DB에 없을 때만 외부 API 호출
-- **스트림 기반 필터링**: 고급 검색에서 메모리 효율적 처리
-- **입력값 유효성 검사**: 정규식을 통한 입력 검증
-
-### 🔄 개선 예정 사항
-- **Redis 캐싱**: 자주 조회되는 데이터 캐싱
-- **페이징**: 대용량 데이터 처리
-- **인덱스 최적화**: 데이터베이스 쿼리 성능 향상 
-
-## 🖥️ 프론트엔드 주요 컴포넌트와 API 연동 예시
-- **EvolutionChain, EvolutionChainTree**: /api/pokemon/{name}/evolution-chain API를 활용해 진화 트리 시각화 (구현 완료)
-- **StatComparisonChart**: /api/pokemon/advanced-search 등으로 여러 포켓몬의 능력치 비교 (구현 완료)
-- **PokemonGrid, PokemonCard**: /api/pokemon/all, /api/pokemon/{name} 등으로 전체 목록 및 상세 정보 표시 (구현 완료) 
+// 진화체인 조회
+const evolutionResponse = await fetch('/api/pokemon/bulbasaur/evolution');
+const evolution = await evolutionResponse.json();
+``` 
