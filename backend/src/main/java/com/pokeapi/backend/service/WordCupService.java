@@ -121,7 +121,7 @@ public class WordCupService {
             }
 
             if (entity.getFinalRanking() != null) {
-                dto.setFinalRanking(objectMappner.readValue(entity.getFinalRanking(), List.class));
+                dto.setFinalRanking(objectMapper.readValue(entity.getFinalRanking(), List.class));
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException("제이슨 파싱 오류", e);
