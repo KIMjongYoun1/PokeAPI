@@ -15,7 +15,7 @@ import com.pokeapi.backend.repository.WorldCupResultRepository;
 import com.pokeapi.backend.repository.WorldCupStatisticsRepository;
 
 @Service
-public class WordCupService {
+public class WorldCupService {
 
     @Autowired
     private WorldCupResultRepository worldCupResultRepository;
