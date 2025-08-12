@@ -64,7 +64,7 @@
 | english_name | VARCHAR(50) | NOT NULL | 영어 이름 |
 | korean_name | VARCHAR(50) | NOT NULL | 한글 이름 |
 
-### 6. world_cup_results 테이블 (계획)
+### 6. world_cup_results 테이블 (구현 완료)
 이상형 월드컵 결과를 저장하는 테이블
 
 | 컬럼명 | 데이터타입 | 제약조건 | 설명 |
@@ -80,7 +80,7 @@
 | created_at | TIMESTAMP | NOT NULL | 생성일시 |
 | completed_at | TIMESTAMP | NOT NULL | 완료일시 |
 
-### 7. world_cup_statistics 테이블 (계획)
+### 7. world_cup_statistics 테이블 (구현 완료)
 포켓몬별 이상형 월드컵 통계를 저장하는 테이블
 
 | 컬럼명 | 데이터타입 | 제약조건 | 설명 |
@@ -90,7 +90,7 @@
 | total_participations | INTEGER | DEFAULT 0 | 총 참가 횟수 |
 | total_wins | INTEGER | DEFAULT 0 | 총 우승 횟수 |
 | total_top3 | INTEGER | DEFAULT 0 | TOP3 진입 횟수 |
-| average_rank | DOUBLE PRECISION | DEFAULT 0.0 | 평균 순위 |
+| average_rank | INTEGER | DEFAULT 0 | 평균 순위 |
 | last_updated | TIMESTAMP | NOT NULL | 마지막 업데이트 |
 
 ### 8. battle_tournament_results 테이블 (최종 단계 계획)
@@ -386,6 +386,26 @@ CREATE INDEX idx_pokemon_battle_stats_average_score ON pokemon_battle_stats(aver
 - **created_at**: 시간순 정렬 최적화
 - **tournament_type**: 토너먼트 타입별 필터링 최적화
 - **win_rate**: 승률 기반 정렬 최적화 (배틀 통계)
+
+## 📝 최근 변경사항 (2025년 1월)
+
+### 데이터 타입 변경
+- **average_rank**: `DOUBLE PRECISION` → `INTEGER` (정확성 및 성능 향상)
+- **통계 계산**: 소수점 제거로 안정성 개선
+
+### 포켓몬 세대 업데이트
+- **10세대 추가**: 1026-1302번 포켓몬 (총 1302마리)
+- **세대별 ID 범위**:
+  - 1세대: 1-151 (151마리)
+  - 2세대: 152-251 (100마리)
+  - 3세대: 252-386 (135마리)
+  - 4세대: 387-493 (107마리)
+  - 5세대: 494-649 (156마리)
+  - 6세대: 650-721 (72마리)
+  - 7세대: 722-809 (88마리)
+  - 8세대: 810-905 (96마리)
+  - 9세대: 906-1025 (120마리)
+  - **10세대: 1026-1302 (277마리)**
 
 ### 제약조건
 - **UNIQUE 제약**: pokemon_id, tournament_id, pokemon_name_mapping.pokemon_id

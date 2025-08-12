@@ -3,6 +3,64 @@
 ## 개요
 PokeAPI 백엔드 개발 과정에서 발생했던 주요 문제들과 해결방법을 정리한 문서입니다.
 
+## 📝 최근 해결된 문제들 (2025년 1월)
+
+### WorldCup 기능 개발 중 발생한 문제들
+
+#### 1. 메서드 시그니처 불일치 문제
+**문제**: `updatePokemonStatistics` 메서드 호출과 정의가 불일치
+```java
+// 호출: 3개 파라미터
+updatePokemonStatistics(winnerId, 1, finalRanking.size());
+
+// 정의: 4개 파라미터  
+private void updatePokemonStatistics(Integer pokemonId, int winCount, int rank, int totalParticipants)
+```
+
+**해결**: 불필요한 `winCount` 파라미터 제거
+```java
+private void updatePokemonStatistics(Integer pokemonId, int rank)
+```
+
+#### 2. 타입 캐스팅 경고 문제
+**문제**: `objectMapper.readValue()` 호출 시 타입 캐스팅 경고
+```java
+List<Object> participants = objectMapper.readValue(json, List.class); // 경고 발생
+```
+
+**해결**: `@SuppressWarnings("unchecked")` 어노테이션 추가 및 메서드 분리
+```java
+@SuppressWarnings("unchecked")
+private List<Map<String, Object>> parseParticipants(String json) throws JsonProcessingException {
+    return objectMapper.readValue(json, List.class);
+}
+```
+
+#### 3. Entity 타입 불일치 문제
+**문제**: `WorldCupStatistics`를 `Pokemon`으로 변환하려고 시도
+```java
+participants.add(convertToParticipantDTO(topPokemons.get(i))); // WorldCupStatistics → Pokemon 변환 시도
+```
+
+**해결**: Repository를 통해 Pokemon 객체 조회 후 변환
+```java
+WorldCupStatistics stats = topPokemons.get(i);
+Pokemon pokemon = pokemonRepository.findByPokemonId(stats.getPokemonId())
+        .orElseThrow(() -> new RuntimeException("포켓몬을 찾을 수 없습니다: " + stats.getPokemonId()));
+participants.add(convertToParticipantDTO(pokemon));
+```
+
+#### 4. 데이터 타입 최적화
+**문제**: `average_rank`가 `Double` 타입으로 소수점 계산 오류 가능성
+**해결**: `Integer` 타입으로 변경하여 안정성 향상
+```java
+// Entity
+private Integer averageRank = 0;
+
+// DTO
+private Integer averageRank;
+```
+
 ## 1. 데이터베이스 제약조건 문제
 
 ### 문제 상황

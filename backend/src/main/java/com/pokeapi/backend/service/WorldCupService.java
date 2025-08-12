@@ -5,13 +5,16 @@ import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pokeapi.backend.dto.AutoWorldCupRequestDTO;
 import com.pokeapi.backend.dto.WorldCupParticipantDTO;
 import com.pokeapi.backend.dto.WorldCupRankingDTO;
 import com.pokeapi.backend.dto.WorldCupRequestDTO;
 import com.pokeapi.backend.dto.WorldCupResultDTO;
+import com.pokeapi.backend.dto.WorldCupStatisticsDTO;
 import com.pokeapi.backend.entity.Pokemon;
 import com.pokeapi.backend.entity.WorldCupResult;
 import com.pokeapi.backend.entity.WorldCupStatistics;
@@ -28,8 +31,7 @@ public class WorldCupService {
     @Autowired
     private WorldCupStatisticsRepository worldCupStatisticsRepository;
 
-    @Autowired
-    private PokemonService pokemonService;
+
 
     @Autowired
     private PokemonRepository pokemonRepository;
@@ -40,6 +42,7 @@ public class WorldCupService {
     /**
      * 월드컵 결과 저장
      */
+    @Transactional
     public WorldCupResultDTO saveWorldCupResult(WorldCupResultDTO resultsDTO) {
         WorldCupResult entity = new WorldCupResult();
         entity.setTournamentId(resultsDTO.getTournamentId());
@@ -79,16 +82,16 @@ public class WorldCupService {
         responseDTO.setCompletedAt(savedEntity.getCompletedAt());
 
         try {
-
             if (savedEntity.getConditions() != null) {
-                responseDTO.setConditions(objectMapper.readValue(savedEntity.getConditions(), Map.class));
+                responseDTO.setConditions(parseConditions(savedEntity.getConditions()));
             }
 
             if (savedEntity.getParticipants() != null) {
-                responseDTO.setParticipants(objectMapper.readValue(savedEntity.getParticipants(), List.class));
+                responseDTO.setParticipants(parseParticipants(savedEntity.getParticipants()));
             }
 
             if (savedEntity.getFinalRanking() != null) {
+                responseDTO.setFinalRanking(parseFinalRanking(savedEntity.getFinalRanking()));
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException("제이슨 변환 오류", e);
@@ -98,7 +101,7 @@ public class WorldCupService {
     }
 
     /**
-     * 토너먼트 ID로 월드켭 결과 조회
+     * 토너먼트 ID로 월드컵 결과 조회
      * 
      */
     public WorldCupResultDTO getWorldCupResult(String tournamentId) {
@@ -116,17 +119,16 @@ public class WorldCupService {
         dto.setCompletedAt(entity.getCompletedAt());
 
         try {
-
             if (entity.getConditions() != null) {
-                dto.setConditions(objectMapper.readValue(entity.getConditions(), Map.class));
+                dto.setConditions(parseConditions(entity.getConditions()));
             }
 
             if (entity.getParticipants() != null) {
-                dto.setParticipants(objectMapper.readValue(entity.getParticipants(), List.class));
+                dto.setParticipants(parseParticipants(entity.getParticipants()));
             }
 
             if (entity.getFinalRanking() != null) {
-                dto.setFinalRanking(objectMapper.readValue(entity.getFinalRanking(), List.class));
+                dto.setFinalRanking(parseFinalRanking(entity.getFinalRanking()));
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException("제이슨 파싱 오류", e);
@@ -155,15 +157,15 @@ public class WorldCupService {
             // Json 파싱 - 데이터 매핑이라고 생각함
             try {
                 if (entity.getConditions() != null) {
-                    dto.setConditions(objectMapper.readValue(entity.getConditions(), Map.class));
+                    dto.setConditions(parseConditions(entity.getConditions()));
                 }
 
                 if (entity.getParticipants() != null) {
-                    dto.setParticipants(objectMapper.readValue(entity.getParticipants(), List.class));
+                    dto.setParticipants(parseParticipants(entity.getParticipants()));
                 }
 
                 if (entity.getFinalRanking() != null) {
-                    dto.setFinalRanking(objectMapper.readValue(entity.getFinalRanking(), List.class));
+                    dto.setFinalRanking(parseFinalRanking(entity.getFinalRanking()));
                 }
 
             } catch (JsonProcessingException e) {
@@ -172,7 +174,7 @@ public class WorldCupService {
             return dto;
         }).collect(Collectors.toList());
     }
-    // ===== 2. 월드컵 참가자 선성 =====
+    // ===== 2. 월드컵 참가자 선정 =====
 
     /**
      * 조건에 맞는월드컵 참가자 선정
@@ -193,7 +195,7 @@ public class WorldCupService {
                 .collect(Collectors.toList());
     }
 
-    /*
+    /**
      * 조건에 맞는 포켓몬 후보 조회
      * 
      */
@@ -216,10 +218,10 @@ public class WorldCupService {
         if (request.getType() != null && !request.getType().equals("all")) {
             candidates = candidates.stream()
             .filter(pokemon -> pokemon.getKoreanTypes() != null &&
-            pokemon.getKoreanTypes().contaions(request.getType()))
+            pokemon.getKoreanTypes().contains(request.getType()))
             .collect(Collectors.toList());
         }
-        return candidates:;
+        return candidates;
     }
 
     // ===== 3. 통계 업데이트 =====
@@ -227,29 +229,30 @@ public class WorldCupService {
     /**
      * 월드컵 완료 후 통계 업데이트
      */
-    public void updateStatistics(Integer winnerId,List<WorldCupRankingDTO> finalRanking) {
+    @Transactional
+    public void updateStatistics(Integer winnerId, List<WorldCupRankingDTO> finalRanking) {
 
-        updatePokemonStatistics(winnerId, 1, finalRanking.size());
+        updatePokemonStatistics(winnerId, 1);
 
-        for (int i =0; i < Math.min(3, finalRanking.size()); i++) {
-            WorldCupRankingDTO ranking = fianlRanking.get(i);
-            updatePokemonStatistics(ranking.getPokemonId(), 1, ranking.getRank(), finalRanking.size());
+        for (int i = 0; i < Math.min(3, finalRanking.size()); i++) {
+            WorldCupRankingDTO ranking = finalRanking.get(i);
+            updatePokemonStatistics(ranking.getPokemonId(), ranking.getRank());
         }
     }
 
     /**
      * 개별 포켓몬 통계 업데이트
      */
-    private void updatePokemonStatistics(Integer pokemonId, int winCount, int rank, int totalParticipants) {
+    private void updatePokemonStatistics(Integer pokemonId, int rank) {
 
         WorldCupStatistics statistics = worldCupStatisticsRepository.findByPokemonId(pokemonId)
-                       .orElse(createNewStatistics(pokemonId));
+                .orElse(createNewStatistics(pokemonId));
 
         statistics.setTotalParticipations(statistics.getTotalParticipations() + 1);
         statistics.setLastUpdated(LocalDateTime.now());
 
         if (rank == 1) {
-            statistics.setTotalWins(statistics.getTotalWins() +1 );
+            statistics.setTotalWins(statistics.getTotalWins() + 1);
         }
 
         if (rank <= 3) {
@@ -260,6 +263,265 @@ public class WorldCupService {
         statistics.setAverageRank(totalRank / statistics.getTotalParticipations());
 
         worldCupStatisticsRepository.save(statistics);
+
+    }
+
+    /**
+     * 새로운 통계 엔티티 생성
+     */
+    private WorldCupStatistics createNewStatistics(Integer pokemonId) {
+
+        WorldCupStatistics statistics = new WorldCupStatistics();
+        statistics.setPokemonId(pokemonId);
+        statistics.setTotalParticipations(0);
+        statistics.setTotalWins(0);
+        statistics.setTotalTop3(0);
+        statistics.setAverageRank(0);
+        statistics.setLastUpdated(LocalDateTime.now());
+
+        return statistics;
+    }
+
+    /**
+     * 세대별 인기 포켓몬 조회
+     */
+    public List<WorldCupStatisticsDTO> getPopularPokemons(Integer generation) {
+
+        List<WorldCupStatistics> statistics = worldCupStatisticsRepository
+                .findTopByGenerationOrderByRankAndWins(generation);
+
+        return statistics.stream().map(this::convertToStatisticsDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 타입별 인기 포켓몬 조회
+     */
+    public List<WorldCupStatisticsDTO> getPopularPokemons(String type) {
+
+        List<WorldCupStatistics> statistics = worldCupStatisticsRepository
+                .findTopByTypeOrderByRankAndWins(type);
+
+        return statistics.stream().map(this::convertToStatisticsDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 세대별 + 타입별 인기 포켓몬 조회
+     */
+    public List<WorldCupStatisticsDTO> getPopularPokemons(Integer generation, String type) {
+
+        List<WorldCupStatistics> statistics = worldCupStatisticsRepository
+                .findTopByGenerationAndTypeOrderByRankAndWins(generation, type);
+
+        return statistics.stream().map(this::convertToStatisticsDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 통계 기반 자동 월드컵 생성
+     */
+    public List<WorldCupParticipantDTO> createAutoWorldCup(AutoWorldCupRequestDTO request) {
+
+        List<WorldCupStatistics> topPokemons = getTopPokemonsByRequest(request);
+        List<WorldCupParticipantDTO> participants = new ArrayList<>();
+
+        int topCount = Math.min(request.getTopCount(), topPokemons.size());
+
+        // top 포켓몬 추가
+        for (int i = 0; i < topCount; i++) {
+            WorldCupStatistics stats = topPokemons.get(i);
+            Pokemon pokemon = pokemonRepository.findByPokemonId(stats.getPokemonId())
+                    .orElseThrow(() -> new RuntimeException("포켓몬을 찾을 수 없습니다: " + stats.getPokemonId()));
+            participants.add(convertToParticipantDTO(pokemon));
+        }
+
+        // 랜덤 포켓몬 추가
+        if (request.getIncludeRandom() && participants.size() < request.getParticipantCount()) {
+
+            List<Pokemon> randomPokemons = getRandomPokemons(request, topPokemons);
+
+            int remainingCount = request.getParticipantCount() - participants.size();
+
+            for (int i = 0; i < Math.min(remainingCount, randomPokemons.size()); i++) {
+                participants.add(convertToParticipantDTO(randomPokemons.get(i)));
+            }
+        }
+
+        return participants;
+
+    }
+
+    /**
+     * 요청에 따른 Top 포켓몬들 조회
+     */
+    private List<WorldCupStatistics> getTopPokemonsByRequest(AutoWorldCupRequestDTO request) {
+
+        if (request.getGeneration() != null && request.getType() != null) {
+            return worldCupStatisticsRepository.findTopByGenerationAndTypeOrderByRankAndWins(
+                    Integer.parseInt(request.getGeneration()), request.getType());
+
+        } else if (request.getGeneration() != null) {
+            return worldCupStatisticsRepository.findTopByGenerationOrderByRankAndWins(
+                Integer.parseInt(request.getGeneration()));
+            
+        } else if (request.getType() != null) {
+            return worldCupStatisticsRepository.findTopByTypeOrderByRankAndWins(
+                request.getType());
+            
+        } else {
+            return worldCupStatisticsRepository.findTop10ByOrderByAverageRankAsc();
+        }
+    }
+
+    /**
+     * 랜덤 포켓모들 조회 (TOP 포켓몬 제외)
+     */
+    private List<Pokemon> getRandomPokemons(AutoWorldCupRequestDTO request, List<WorldCupStatistics> topPokemons) {
+
+        Set<Integer> topPokemonIds = topPokemons.stream()
+            .map(WorldCupStatistics::getPokemonId)
+            .collect(Collectors.toSet());
+
+        List<Pokemon> allPokemons = pokemonRepository.findAll();
+        List<Pokemon> availablePokemons = allPokemons.stream()
+            .filter(pokemon -> !topPokemonIds.contains(pokemon.getPokemonId()))
+            .collect(Collectors.toList());
+
         
+            Collections.shuffle(availablePokemons);
+            return availablePokemons.stream()
+                   .limit(request.getRandomCount())
+                   .collect(Collectors.toList());
+    }
+
+    /**
+     * ======= Convert 매서드임 중요 없으면안됨 ========
+     */
+    private WorldCupParticipantDTO convertToParticipantDTO(Pokemon pokemon) {
+        
+        WorldCupParticipantDTO dto = new WorldCupParticipantDTO();
+        dto.setId(pokemon.getPokemonId());
+        dto.setName(pokemon.getName());
+        dto.setKoreanName(pokemon.getKoreanName());
+        dto.setSpriteUrl(pokemon.getSpriteUrl());
+        dto.setDescription(pokemon.getDescription());
+        dto.setGeneration(pokemon.getGeneration());
+
+        // 타입정보 파싱
+        if (pokemon.getKoreanTypes() != null) {
+            try {
+                dto.setTypes(parseTypes(pokemon.getKoreanTypes()));
+            } catch (JsonProcessingException e) {
+                dto.setTypes(new ArrayList<>());
+            }
+        }
+        
+        return dto;
+    }
+
+    /**
+     * WorldCupStatistics Entity -> DTO 변환
+     */
+    private WorldCupStatisticsDTO convertToStatisticsDTO(WorldCupStatistics statistics) {
+
+        WorldCupStatisticsDTO dto = new WorldCupStatisticsDTO();
+        dto.setId(statistics.getId());
+        dto.setPokemonId(statistics.getPokemonId());
+        dto.setTotalParticipations(statistics.getTotalParticipations());
+        dto.setTotalWins(statistics.getTotalWins());
+        dto.setTotalTop3(statistics.getTotalTop3());
+        dto.setAverageRank(statistics.getAverageRank());
+        dto.setLastUpdated(statistics.getLastUpdated());
+
+        // 포켓몬 정보 추가
+        Pokemon pokemon = pokemonRepository.findByPokemonId(statistics.getPokemonId()).orElse(null);
+        if (pokemon != null) {
+            dto.setPokemonName(pokemon.getName());
+            dto.setPokemonKoreanName(pokemon.getKoreanName());
+            dto.setSpriteUrl(pokemon.getSpriteUrl());
+            dto.setGeneration(pokemon.getGeneration());
+
+            // 타입정보 파싱
+            if (pokemon.getKoreanTypes() != null) {
+                try {
+                    dto.setTypes(parseTypes(pokemon.getKoreanTypes()));
+                } catch (Exception e) {
+                    dto.setTypes(new ArrayList<>());
+                }
+            }
+        }
+
+        // 계산된 통계
+        if (statistics.getTotalParticipations() > 0 ) {
+            dto.setWinRate((statistics.getTotalWins() * 100) / statistics.getTotalParticipations());
+            dto.setTop3Rate((statistics.getTotalTop3() * 100) / statistics.getTotalParticipations());
+        } else {
+            dto.setWinRate(0);
+            dto.setTop3Rate(0);
+        }
+
+        return dto;
+    }
+
+    /**
+     * 유틸리티 메서드들 필수!
+     */
+
+    /**
+     * JSON 파싱 유틸리티 메서드들
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseConditions(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, Map.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> parseParticipants(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, List.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> parseFinalRanking(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, List.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> parseTypes(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, List.class);
+    }
+
+    private Integer getGenerationStartId(Integer generation) {
+        
+        switch (generation) {
+            case 1: return 1;
+            case 2: return 152;
+            case 3: return 252;
+            case 4: return 387;
+            case 5: return 494;
+            case 6: return 650;
+            case 7: return 722;
+            case 8: return 810;
+            case 9: return 906;
+            case 10: return 1026; // 10세대 시작 ID
+            default: return 1;
+        }
+    }
+    
+    private Integer getGenerationEndId(Integer generation) {
+        switch (generation) {
+            case 1: return 151;
+            case 2: return 251;
+            case 3: return 386;
+            case 4: return 493;
+            case 5: return 649;
+            case 6: return 721;
+            case 7: return 809;
+            case 8: return 905;
+            case 9: return 1025;
+            case 10: return 1302; // 10세대 추가 (1026-1302)
+            default: return 1302; // 전체 포켓몬 수로 변경
+        }
     }
 }
+
