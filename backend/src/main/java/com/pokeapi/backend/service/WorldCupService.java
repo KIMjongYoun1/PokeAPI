@@ -4,6 +4,7 @@ import java.util.*;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +44,7 @@ public class WorldCupService {
      * 월드컵 결과 저장
      */
     @Transactional
+    @Retryable(value = {Exception.class}, maxAttempts = 3)
     public WorldCupResultDTO saveWorldCupResult(WorldCupResultDTO resultsDTO) {
         WorldCupResult entity = new WorldCupResult();
         entity.setTournamentId(resultsDTO.getTournamentId());
@@ -285,7 +287,7 @@ public class WorldCupService {
     /**
      * 세대별 인기 포켓몬 조회
      */
-    public List<WorldCupStatisticsDTO> getPopularPokemons(Integer generation) {
+    public List<WorldCupStatisticsDTO> getPopularPokemonsGeneration(Integer generation) {
 
         List<WorldCupStatistics> statistics = worldCupStatisticsRepository
                 .findTopByGenerationOrderByRankAndWins(generation);
@@ -297,7 +299,7 @@ public class WorldCupService {
     /**
      * 타입별 인기 포켓몬 조회
      */
-    public List<WorldCupStatisticsDTO> getPopularPokemons(String type) {
+    public List<WorldCupStatisticsDTO> getPopularPokemonsType(String type) {
 
         List<WorldCupStatistics> statistics = worldCupStatisticsRepository
                 .findTopByTypeOrderByRankAndWins(type);
@@ -309,7 +311,7 @@ public class WorldCupService {
     /**
      * 세대별 + 타입별 인기 포켓몬 조회
      */
-    public List<WorldCupStatisticsDTO> getPopularPokemons(Integer generation, String type) {
+    public List<WorldCupStatisticsDTO> getPopularPokemonsTypeAndGeneration(Integer generation, String type) {
 
         List<WorldCupStatistics> statistics = worldCupStatisticsRepository
                 .findTopByGenerationAndTypeOrderByRankAndWins(generation, type);
