@@ -102,6 +102,28 @@ export const worldCupApi: WorldCupApiEndpoints = {
     },
 
     // 월드컵 결과 조회
+    getWorldCupResult: async (tournamentId: string): Promise<WorldCupResult> => {
+        return apiClient.get<WorldCupResult>(`/results/${tournamentId}`);
+    },
 
+    // 최근 월드컵 결과 조회
+    getRecentWorldCupResults: async (limit: number = 10): Promise<WorldCupResult[]> => {
+        const endpoint = limit ? `/results/recent?limet=${limit}` : '/results/recent';
+        return apiClient.get<WorldCupResult[]>(endpoint);
+    },
 
+    // 세대별 월드컵 통계 조회
+    getStatisticsByGeneration: async (generation: number): Promise<WorldCupStatistics[]> => {
+        return apiClient.get<WorldCupStatistics[]>(`/statistics/generation/${generation}`);
+    },
+
+    // 타입별 월드컵 통계 조회
+    getStatisticsByType: async (type: string): Promise<WorldCupStatistics[]> => {
+        return apiClient.get<WorldCupStatistics[]>(`/statistics/type/${type}`);
+    },
+
+    // 세데 + 타입별 통계 조회
+    getStatisticsByGenerationAndType: async(generation:number, type:string): Promise<WorldCupStatistics[]> => {
+        return apiClient.get<WorldCupStatistics[]>(`/statisttics/${generation}/type/${type}`);
+    },
 }
