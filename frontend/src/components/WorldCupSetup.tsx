@@ -5,6 +5,7 @@ import type { WorldCupRequest, TournamentType } from '../types/WorldCup';
 interface WorldCupSetupProps {
     onStart: (request: WorldCupRequest) => void;
     isLoading?: boolean;
+    error?: string;
 }
 
 const WorldCupSetup = ({ onStart, isLoading = false }: WorldCupSetupProps) => {
@@ -19,7 +20,7 @@ const WorldCupSetup = ({ onStart, isLoading = false }: WorldCupSetupProps) => {
     });
 
     // 에러상태관리
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const generationOptions = [
         { value: 'all', label: '전체세대' },
@@ -77,12 +78,49 @@ const WorldCupSetup = ({ onStart, isLoading = false }: WorldCupSetupProps) => {
             ...prev,
             [field]: value
         }));
+
+        if (fieldErrors[field]){
+            setFieldErrors(prev => ({
+                ...prev,
+                [field]:''
+            }));
+        }
     };
+
+    const validateForm =(): boolean => {
+        const newErrors: Record<string, string> ={};
+
+        //참가자 검증
+        if (![8, 16 ,32 ,64].includes(formData.participantCount!)) {
+            newErrors.participantCount = '참가자 수는 8, 16, 32, 64 중 하나여야 합니다.';
+        }
+       // 세대 검증
+       if (!['all', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].includes(formData.generation!)) {
+        newErrors.generation = '세대는 전체, 1~10세대 중 하나여야 합니다.';
+    }
+
+        // 타입 검증 (선택사항이지만 선택했다면 유효한지 확인)
+        if (formData.type && !['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'].includes(formData.type)) {
+            newErrors.type = '유효하지 않은 타입입니다.';
+        }
+
+        //토너먼트 타입 검증
+        if (!['vote', 'random'].includes(formData.tournamentType!)) {
+            newErrors.tournamentType = '토너먼트 방식은 투표 또는 랜덤 중 하나여야 합니다.';
+        }
+
+        setFieldErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    }
 
 
     // 폼제출 처리 함수 submit
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            return;
+        }
 
         const finalTitle = generateTitle(formData);
         const finalFormData = {
@@ -97,20 +135,87 @@ const WorldCupSetup = ({ onStart, isLoading = false }: WorldCupSetupProps) => {
     // JSX 반환
     return (
         <div className="worldcup-setup">
-            <h2>포켓몬 월드컵 설정</h2>
-            <p>월드컵에! 참가할! 포켓몬을 설정! 해주세요!</p>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="setup-form">
+            <div className="setup-header">
+                <h2>포켓몬 월드컵 설정</h2>
+                <p>월드컵에 참가할 포켓몬들을 설정해주세요.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="setup-form">
                 {/* 제목표시 (읽기전용) */}
                 <div className="form-group">
                     <label>월드컵 제목</label>
                     <div className="title-display">
-                        {formData.title || '설정을 완료하면 제목이 자동 생성 됩니다'}
+                        {formData.title || '설정을 완료하면 제목이 자동 생성됩니다'}
                     </div>
+                </div>
+                {/* 참가자 수 */}
+                <div className="form-group">
+                    <label htmlFor="participantCount">참가자 수</label>
+                    <select
+                        id="participantCount"
+                        value={formData.participantCount}
+                        onChange={(e) => handleInputChange('participantCount', parseInt(e.target.value))}
+                        >
+                        {[8, 16, 32, 64].map(count => (
+                            <option key={count} value={count}>{count}마리</option>
+                        ))}
+                    </select>                 
+                </div>
+                {/* 세대 선택 */}
+                <div className="form-group">
+                    <label htmlFor="generation">세대</label>
+                    <select
+                        id="generation"
+                        value={formData.generation}
+                        onChange={(e) => handleInputChange('generation', e.target.value)}
+                    >
+                            {generationOptions.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                        </select>
+                </div>
+                {/* 타입 선택 */}
+                <div className="form-group">
+                    <label htmlFor="type">타입 (선택사항)</label>
+                    <select
+                        id="type"
+                        value={formData.type}
+                        onChange={(e) => handleInputChange('type', e.target.value)}
+                    >
+                            {typeOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                </div>
+                {/* 토너먼트 타입 */}
+                <div className="form-group">
+                    <label htmlFor="tournamentType">토너먼트 방식</label>
+                    <select
+                        id="tournamentType"
+                        value={formData.tournamentType}
+                        onChange={(e) => handleInputChange('tournamentType', e.target.value as TournamentType)}
+                    >
+                        <option value="vote">투표 방식</option>
+                        <option value="random">랜덤 방식</option>
+                        </select>
+                </div>
+                {/* 시작 버튼 */}
+                <div className="form-actions">
+                    <button
+                    type="submit"
+                    className="start-button"
+                    disabled={isLoading}
+                    >
+                        {isLoading ? '준비 중...' : '월드컵 시작하기'}
+                    </button>
                 </div>
 
             </form>
+        </div>
 
-    )
-}
+    );
+};
+
+export default WorldCupSetup;
