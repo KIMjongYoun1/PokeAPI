@@ -292,10 +292,22 @@ const WorldCupResult = ({ result, onRestart, onViewHistory, onShare }: WorldCupR
             )}
 
             {/** 엑션 버튼들 (애니메이션으로 순차 표시) */}
-            
+            {showActions && (
+                <div className="action-buttons">
+                    <button onClick={onRestart} className="btn-restart">다시 시작하기</button>
+                    <button onClick={onViewHistory} className="btn-history">히스토리</button>
+                    {onShare && (
+                        <button onClick={handleShare} className="btn-share">
+                            {isCopied ? '복사완료' : '공유하기'}
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
 
         
-    )
+    );
 
-}
+};
+
+export default WorldCupResult;
