@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { WorldCupResult } from '../types/WorldCup';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
@@ -67,30 +67,17 @@ const WorldCupHistory = ({
     //5. 선택된 히스토리 상태 (상세보기)
     const [selectedHistory, setSelectedHistory] = useState<string | null>(null);
 
-    // ==== useEffect ====
-
-    //1. 컴포넌트 마운트시 초기 데이터 로드
-    useEffect(() => {
-        loadHistories(true);
-    }, []);
-
-    //2. 필터 변경시 데이터 재로드
-    useEffect(() => {
-        loadHistories(true);
-        setCurrentPage(1);
-    }, [filter]);
-
     // ==== API 호출 함수들 ====
 
     // 히스토리 목록 로드 함수
-    const loadHistories = useCallback(async (isInitalLoad: boolean = false) => {
+    const loadHistories = useCallback(async (isInitialLoad: boolean = false) => {
         try {
             setIsLoading(true);
             setError(null);
 
             //API 호출 파라미터 구성
             const params = new URLSearchParams({
-                page: isInitalLoad ? '1' : currentPage.toString(),
+                page: isInitialLoad ? '1' : currentPage.toString(),
                 limit: maxItems.toString(),
                 generation: filter.generation,
                 type: filter.type,
@@ -108,7 +95,7 @@ const WorldCupHistory = ({
 
             const historySummaries = data.results.map(transformToHistorySummary);
 
-            if (isInitalLoad) {
+            if (isInitialLoad) {
                 setHistories(historySummaries);
             } else {
                 // 페이지네이션 시 기존 데이터 추가
@@ -125,6 +112,18 @@ const WorldCupHistory = ({
         }
     }, [currentPage, maxItems, filter]);
 
+    // ==== useEffect ====
+
+    //1. 컴포넌트 마운트시 초기 데이터 로드
+    useEffect(() => {
+        loadHistories(true);
+    }, [loadHistories]);
+
+    //2. 필터 변경시 데이터 재로드
+    useEffect(() => {
+        loadHistories(true);
+        setCurrentPage(1);
+    }, [filter, loadHistories]);
 
     //백엔드 데이터를 HistorySummary 형식으로 변환
     const transformToHistorySummary = (backendData: any): HistorySummary => {
@@ -139,16 +138,16 @@ const WorldCupHistory = ({
 
             winner: {
                 id: backendData.winnerId,
-                koreanName: backendData.winnerKoreanName || '알수없음',
-                name: backendData.winnerName || '알수없음',
-                spriteUrl: backendData.winnerSpriteUrl || '알수없음',
-                types: conditions.types || [],
+                koreanName: backendData.winnerKoreanName || '알 수 없음',
+                name: backendData.winnerName || 'Unknown',
+                spriteUrl: backendData.winnerSpriteUrl || '/default-pokemon.png',
+                types: [], // 목록에서는 간단히 표시
             },
 
             metadata: {
                 participantCount: conditions.participantCount || 0,
-                generation: conditions.generation || '알수없음',
-                type: conditions.type || '알수없음',
+                generation: conditions.generation || 'all',
+                type: conditions.type || 'all',
                 completedAt: backendData.completedAt,
             }
         };
@@ -225,7 +224,7 @@ const WorldCupHistory = ({
                         <CompactHistoryCard
                             key={history.tournamentId}
                             history={history}
-                            oncClikck={() => handleHistoryClick(history.tournamentId)} />
+                            onClick={() => handleHistoryCardClick(history.tournamentId)} />
                     ))}
                 </div>
 
@@ -241,7 +240,7 @@ const WorldCupHistory = ({
     }
 
     return (
-        <div className="worldcup=history">
+        <div className="worldcup-history">
             {/** 헤더 섹션 */}
             <div className="history-header">
                 <h2>월드컵 결과 히스토리</h2>
@@ -291,29 +290,145 @@ const WorldCupHistory = ({
                 <div className="filter-group">
                     <label htmlFor="sort-filter">정렬:</label>
                     <select
-                        id="sort=filter"
+                        id="sort-filter"
                         value={filter.sortBy}
                         onChange={(e) => handleFilterChange('sortBy', e.target.value)}>
-                            <option value="recent">최신순</option>
-                            <option value="oldest">오래된 순</option>
-                            <option value="participantCount">참가자 수순</option>
-                        </select>
+                        <option value="recent">최신순</option>
+                        <option value="oldest">오래된 순</option>
+                        <option value="participantCount">참가자 수순</option>
+                    </select>
                 </div>
             </div>
 
             {/** History 목록 */}
             <div className="history-list">
-                {histories.length === - ? (
+                {histories.length === 0 ? (
                     <div className="empty-history">
                         <p>아직 월드컵 결과가 없습니다.</p>
                         <p>첫 번째 월드컵을 시작해 보세요!</p>
                     </div>
                 ) : (
-                    
-                )
+                    <>
+                        {histories.map((history) => (
+                            <HistoryCard
+                                key={history.tournamentId}
+                                history={history}
+                                onClick={() => handleHistoryCardClick(history.tournamentId)}
+                                isSelected={selectedHistory === history.tournamentId} />
+                        ))}
+
+                        {/*더보기 버튼*/}
+                        {hasMore && (
+                            <div className="load-more-container">
+                                <button
+                                    onClick={handleLoadMore}
+                                    disabled={isLoading}
+                                    className="btn-load-more">
+                                    {isLoading ? '로딩중...' : '더보기'}
+                                </button>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
+            {/**에러 메세지 (목록이 있을때) */}
+            {error && histories.length > 0 && (
+                <div className="error-banner">
+                    <ErrorMessage message={error} onRetry={() => setError(null)} />
+                </div>
+            )}
         </div>
-    )
+    );
+};
 
+// == 서브 컴포넌트들 ==
+
+// 일반 히스토리 카드
+interface HistoryCardProps {
+    history: HistorySummary;
+    onClick: () => void;
+    isSelected: boolean;
 }
+
+const HistoryCard =({history, onClick, isSelected}: HistoryCardProps) => {
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const getGenerationText = (generation: string) => {
+        return generation === 'all' ? '전체' : `${generation}세대`;
+    };
+    return (
+        <div className={`history-card ${isSelected ? 'selected' : ''}`}
+        onClick={onClick} >
+
+            <div className="winner-preview">
+                <img
+                    src={history.winner.spriteUrl}
+                    alt={history.winner.koreanName}
+                    className="winner-sprite" />
+
+                    <div className="winner-crown">👑</div>
+            </div>
+
+            <div className="tournament-info">
+                <h3 className="tournament-title">{history.title}</h3>
+                <p className="winner-name">{history.winner.koreanName} 우승</p>
+
+                <div className="tournament-meta">
+                    <span className="participant-count">
+                        {history.metadata.participantCount}명 참가
+                    </span>
+                    <span className="generation">
+                        {getGenerationText(history.metadata.generation)}
+                    </span>
+                    {history.metadata.type !== 'all' &&(
+                        <span className="type">
+                            {history.metadata.type}타입
+                        </span>
+                    )}
+                </div>
+                <p className="completion-date">
+                    {formatDate(history.metadata.completedAt)}
+                </p>
+            </div>
+            <div className="card-actions">
+                <button className="btn-view-detail">상세보기</button>
+            </div>
+        </div>
+    );
+};
+
+interface CompactHistoryCardProps {
+    history: HistorySummary;
+    onClick: () => void;
+}
+
+const CompactHistoryCard = ({history, onClick}: CompactHistoryCardProps) => {
+    return (
+        <div className="compact-history-card" onClick={onClick} >
+            <img
+                src={history.winner.spriteUrl}
+                alt={history.winner.koreanName}
+                className="winner-sprite" />
+
+            <div className="compact-info">
+                <span className="compact-title">{history.title}</span>
+                <span className="compact-winner">{history.winner.koreanName} 우승</span>             
+            </div>
+            <div className="compact-date">
+                {new Date(history.metadata.completedAt).toLocaleDateString('ko-KR')}
+            </div>
+        </div>
+    );
+};
+
+export default WorldCupHistory;
+
