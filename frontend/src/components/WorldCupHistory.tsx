@@ -126,29 +126,38 @@ const WorldCupHistory = ({
     }, [filter, loadHistories]);
 
     //백엔드 데이터를 HistorySummary 형식으로 변환
-    const transformToHistorySummary = (backendData: any): HistorySummary => {
+    const transformToHistorySummary = (backendData: Record<string, unknown>): HistorySummary => {
         const conditions = typeof backendData.conditions === 'string'
             ? JSON.parse(backendData.conditions)
             : backendData.conditions || {};
 
+        // 타입 안전한 변환 함수들
+        const toString = (value: unknown, defaultValue: string = ''): string => {
+            return typeof value === 'string' ? value : defaultValue;
+        };
+
+        const toNumber = (value: unknown, defaultValue: number = 0): number => {
+            return typeof value === 'number' ? value : defaultValue;
+        };
+
         return {
-            tournamentId: backendData.tournamentId,
-            title: backendData.title,
-            tournamentType: backendData.tournamentType,
+            tournamentId: toString(backendData.tournamentId),
+            title: toString(backendData.title),
+            tournamentType: toString(backendData.tournamentType),
 
             winner: {
-                id: backendData.winnerId,
-                koreanName: backendData.winnerKoreanName || '알 수 없음',
-                name: backendData.winnerName || 'Unknown',
-                spriteUrl: backendData.winnerSpriteUrl || '/default-pokemon.png',
+                id: toNumber(backendData.winnerId),
+                koreanName: toString(backendData.winnerKoreanName, '알 수 없음'),
+                name: toString(backendData.winnerName, 'Unknown'),
+                spriteUrl: toString(backendData.winnerSpriteUrl, '/default-pokemon.png'),
                 types: [], // 목록에서는 간단히 표시
             },
 
             metadata: {
-                participantCount: conditions.participantCount || 0,
-                generation: conditions.generation || 'all',
-                type: conditions.type || 'all',
-                completedAt: backendData.completedAt,
+                participantCount: toNumber(conditions.participantCount),
+                generation: toString(conditions.generation, 'all'),
+                type: toString(conditions.type, 'all'),
+                completedAt: toString(backendData.completedAt),
             }
         };
     };
