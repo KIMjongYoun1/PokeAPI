@@ -7,7 +7,131 @@
 
 ## 📋 API 목록
 
-### 1. 포켓몬 관련 API (구현 완료)
+### 1. 월드컵 관련 API (구현 완료)
+
+#### 1.1 월드컵 결과 조회
+```
+GET /api/worldcup/results/{tournamentId}
+```
+
+**경로 파라미터:**
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| tournamentId | String | Y | 월드컵 토너먼트 ID |
+
+**응답 예시:**
+```json
+{
+  "tournamentId": "tournament_123",
+  "title": "1세대 전기타입 월드컵",
+  "winnerId": 25,
+  "winnerName": "pikachu",
+  "winnerKoreanName": "피카츄",
+  "winnerSpriteUrl": "https://...",
+  "participants": "[{\"id\":25,\"name\":\"pikachu\",...}]",
+  "finalRanking": "[{\"id\":25,\"rank\":1},...]",
+  "conditions": "{\"generation\":1,\"type\":\"electric\"}",
+  "completedAt": "2024-01-15T10:30:00"
+}
+```
+
+#### 1.2 월드컵 히스토리 조회
+```
+GET /api/worldcup/results/history
+```
+
+**쿼리 파라미터:**
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| page | Integer | N | 페이지 번호 (기본값: 1) |
+| limit | Integer | N | 페이지당 항목 수 (기본값: 20) |
+| generation | String | N | 세대 필터 (all, 1-10) |
+| type | String | N | 타입 필터 (all, fire, water, ...) |
+| sortBy | String | N | 정렬 기준 (recent, oldest, participantCount) |
+
+#### 1.3 월드컵 통계 조회
+```
+GET /api/worldcup/statistics
+```
+
+**쿼리 파라미터:**
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| generation | String | N | 세대 필터 |
+| type | String | N | 타입 필터 |
+| period | String | N | 기간 필터 (all, monthly, yearly) |
+| startDate | String | N | 시작일 (YYYY-MM-DD) |
+| endDate | String | N | 종료일 (YYYY-MM-DD) |
+
+**응답 예시:**
+```json
+{
+  "overall": {
+    "totalTournaments": 150,
+    "totalParticipants": 2400,
+    "averageParticipantsPerTournament": 16,
+    "mostPopularType": "fire",
+    "mostActiveGeneration": "1"
+  },
+  "winners": {
+    "topWinners": [
+      {
+        "pokemonId": 25,
+        "koreanName": "피카츄",
+        "name": "pikachu",
+        "spriteUrl": "https://...",
+        "winCount": 5,
+        "winRate": 83
+      }
+    ],
+    "generationDistribution": [
+      {
+        "generation": "1",
+        "count": 50,
+        "percentage": 33
+      }
+    ]
+  }
+}
+```
+
+#### 1.4 월드컵 생성
+```
+POST /api/worldcup/create
+```
+
+**요청 본문:**
+```json
+{
+  "title": "1세대 전기타입 월드컵",
+  "participantCount": 16,
+  "generation": 1,
+  "type": "electric"
+}
+```
+
+#### 1.5 월드컵 결과 저장
+```
+POST /api/worldcup/results
+```
+
+**요청 본문:**
+```json
+{
+  "tournamentId": "tournament_123",
+  "title": "1세대 전기타입 월드컵",
+  "winnerId": 25,
+  "winnerName": "pikachu",
+  "winnerKoreanName": "피카츄",
+  "winnerSpriteUrl": "https://...",
+  "participants": "[{\"id\":25,\"name\":\"pikachu\",...}]",
+  "finalRanking": "[{\"id\":25,\"rank\":1},...]",
+  "conditions": "{\"generation\":1,\"type\":\"electric\"}",
+  "completedAt": "2024-01-15T10:30:00"
+}
+```
+
+### 2. 포켓몬 관련 API (구현 완료)
 
 #### 1.1 포켓몬 이름으로 검색 (구현됨)
 ```
