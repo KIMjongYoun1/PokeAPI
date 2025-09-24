@@ -4,6 +4,7 @@ import HomePage from './page/HomePage';
 import PokemonDetailPage from './page/PokemonDetailPage';
 import ComparisonPage from './page/ComparisonPage';
 import EvolutionPage from './page/EvolutionPage';
+import WorldCupPage from './page/WorldCupPage'; // 수정: WorldCupPage import 추가
 import type { PokemonDTO } from './types/Pokemon';
 
 // 네비게이션 컴포넌트
@@ -14,6 +15,7 @@ const Navigation = () => {
         <Link to="/" className="nav-link">홈</Link>
         <Link to="/comparison" className="nav-link">능력치 비교</Link>
         <Link to="/evolution" className="nav-link">진화 체인</Link>
+        <Link to="/worldcup" className="nav-link">🏆 월드컵</Link> {/* 수정: 월드컵 네비게이션 추가 */}
       </div>
     </nav>
   );
@@ -58,6 +60,7 @@ function App() {
             <Route path="/pokemon/:pokemonName" element={<PokemonDetailWrapper />} />
             <Route path="/comparison" element={<ComparisonPage />} />
             <Route path="/evolution" element={<EvolutionPage />} />
+            <Route path="/worldcup" element={<WorldCupPage />} /> {/* 수정: 월드컵 페이지 라우트 추가 */}
           </Routes>
         </main>
       </div>

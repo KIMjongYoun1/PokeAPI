@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { WorldCupResult } from '../types/WorldCup';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import { WorldCupApiService } from '../services/worldCupApi'; // 수정: API 서비스 import 추가
 
 // 히스토리 목록 표시용
 interface HistorySummary {
@@ -69,31 +70,39 @@ const WorldCupHistory = ({
 
     // ==== API 호출 함수들 ====
 
-    // 히스토리 목록 로드 함수
+    /**
+     * 히스토리 목록 로드 함수
+     * 
+     * 백엔드 API 동작 방식:
+     * 1. WorldCupApiService.getRecentWorldCupResults() 호출
+     * 2. GET /api/worldcup/results 엔드포인트 호출
+     * 3. 데이터베이스에서 최근 월드컵 결과들을 조회
+     * 4. 완료일 기준으로 내림차순 정렬
+     * 5. WorldCupResult 엔티티들을 WorldCupResultDTO 배열로 변환
+     * 6. 각 결과에 포함된 참가자와 우승자 정보도 함께 반환
+     * 7. 백엔드 데이터를 HistorySummary 형식으로 변환
+     * 8. 히스토리 목록 상태에 저장하여 UI에 표시
+     */
     const loadHistories = useCallback(async (isInitialLoad: boolean = false) => {
         try {
             setIsLoading(true);
             setError(null);
 
-            //API 호출 파라미터 구성
-            const params = new URLSearchParams({
-                page: isInitialLoad ? '1' : currentPage.toString(),
-                limit: maxItems.toString(),
-                generation: filter.generation,
-                type: filter.type,
-                sortBy: filter.sortBy
-            });
+            //API 호출 파라미터 구성 (현재 미사용 - 향후 필터링 기능 확장시 사용)
+            // const params = new URLSearchParams({
+            //     page: isInitialLoad ? '1' : currentPage.toString(),
+            //     limit: maxItems.toString(),
+            //     generation: filter.generation,
+            //     type: filter.type,
+            //     sortBy: filter.sortBy
+            // });
 
-            // 백앤드 API 호출 (구현해야됨 TODO)
-            const response = await fetch(`/api/worldcup/results/history?${params}`);
-
-            if (!response.ok) {
-                throw new Error('히스토리를 불러오는데 실패했습니다.');
-            }
-
-            const data = await response.json();
-
-            const historySummaries = data.results.map(transformToHistorySummary);
+            // 실제 백엔드 API 호출
+            console.log('히스토리 데이터 로드 시작...');
+            const results = await WorldCupApiService.getRecentWorldCupResults();
+            console.log('히스토리 데이터 로드 완료:', results.length, '개');
+            
+            const historySummaries = results.map((result: WorldCupResult) => transformToHistorySummary(result as any));
 
             if (isInitialLoad) {
                 setHistories(historySummaries);
@@ -102,7 +111,7 @@ const WorldCupHistory = ({
                 setHistories(prev => [...prev, ...historySummaries]);
             }
 
-            setHasMore(data.hasMore);
+            setHasMore(false); // 현재는 전체 데이터를 한번에 가져오므로 hasMore는 false
 
         } catch (err) {
             console.error('히스토리 목록 로드 실패:', err);

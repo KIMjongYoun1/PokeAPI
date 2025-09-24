@@ -6,6 +6,7 @@ import PokemonStatCard from './PokemonStatCard';
 import StatCard from './StatCard';
 import DistributionChart from './DistributionChart';
 import TimelineChart from './TimelineChart';
+import { WorldCupApiService } from '../services/worldCupApi'; // 수정: API 서비스 import 추가
 
 // 통계 데이터 타입 정의
 interface StatisticsData {
@@ -117,30 +118,62 @@ const WorldCupStatistics = ({
 
     // ==== API 호출 함수들 ====
 
-    // 통계 데이터 로드 함수
+    /**
+     * 통계 데이터 로드 함수
+     * 
+     * 백엔드 API 동작 방식:
+     * 1. 필터 조건에 따라 다른 API 엔드포인트 호출
+     *    - 세대별: GET /api/worldcup/statistics/generation/{generation}
+     *    - 타입별: GET /api/worldcup/statistics/type/{type}
+     *    - 세대+타입별: GET /api/worldcup/statistics/generation/{generation}/type/{type}
+     * 2. 데이터베이스에서 해당 조건의 월드컵 결과들 조회
+     * 3. 우승자별, 참가자별 통계 계산
+     * 4. WorldCupStatistics 엔티티를 WorldCupStatisticsDTO로 변환
+     * 5. 백엔드 데이터를 StatisticsData 형식으로 변환
+     * 6. 통계 데이터를 상태에 저장하여 차트와 카드로 표시
+     */
     const loadStatistics = useCallback(async () => {
         try {
             setIsLoading(true);
             setError(null);
 
-            // API 호출 파라미터 구성
-            const params = new URLSearchParams({
-                generation: filter.generation,
-                type: filter.type,
-                period: filter.period,
-                ...(filter.dateRange.start && { startDate: filter.dateRange.start }),
-                ...(filter.dateRange.end && { endDate: filter.dateRange.end })
-            });
+            // API 호출 파라미터 구성 (현재 미사용 - 향후 필터링 기능 확장시 사용)
+            // const params = new URLSearchParams({
+            //     generation: filter.generation,
+            //     type: filter.type,
+            //     period: filter.period,
+            //     ...(filter.dateRange.start && { startDate: filter.dateRange.start }),
+            //     ...(filter.dateRange.end && { endDate: filter.dateRange.end })
+            // });
 
-            // 백엔드 API 호출 (구현해야됨 TODO)
-            const response = await fetch(`/api/worldcup/statistics?${params}`);
-
-            if (!response.ok) {
-                throw new Error('통계 데이터를 불러오는데 실패했습니다.');
+            // 실제 백엔드 API 호출
+            console.log('통계 데이터 로드 시작...');
+            
+            // 필터에 따라 다른 API 호출
+            let statisticsData: StatisticsData;
+            
+            if (filter.generation !== 'all' && filter.type !== 'all') {
+                // 세대별 + 타입별 통계
+                const generationNum = parseInt(filter.generation);
+                const results = await WorldCupApiService.getWorldCupStatisticsByGenerationAndType(generationNum, filter.type);
+                statisticsData = transformToStatisticsData(results);
+            } else if (filter.generation !== 'all') {
+                // 세대별 통계
+                const generationNum = parseInt(filter.generation);
+                const results = await WorldCupApiService.getWorldCupStatisticsByGeneration(generationNum);
+                statisticsData = transformToStatisticsData(results);
+            } else if (filter.type !== 'all') {
+                // 타입별 통계
+                const results = await WorldCupApiService.getWorldCupStatisticsByType(filter.type);
+                statisticsData = transformToStatisticsData(results);
+            } else {
+                // 전체 통계 (기본값)
+                const results = await WorldCupApiService.getWorldCupStatisticsByGeneration(0); // 0 = 전체
+                statisticsData = transformToStatisticsData(results);
             }
-
-            const data = await response.json();
-            setStatistics(data);
+            
+            console.log('통계 데이터 로드 완료');
+            setStatistics(statisticsData);
 
         } catch (err) {
             console.error('통계 데이터 로드 실패:', err);
@@ -149,6 +182,55 @@ const WorldCupStatistics = ({
             setIsLoading(false);
         }
     }, [filter]);
+
+    // 백엔드 데이터를 StatisticsData 형식으로 변환
+    const transformToStatisticsData = (backendResults: any[]): StatisticsData => {
+        // 전체 통계 계산
+        const totalTournaments = backendResults.length;
+        const totalParticipants = backendResults.reduce((sum, result) => sum + (result.participantCount || 0), 0);
+        const averageParticipantsPerTournament = totalTournaments > 0 ? Math.round(totalParticipants / totalTournaments) : 0;
+        
+        // 가장 인기 있는 타입과 세대 계산 (간단한 로직)
+        const mostPopularType = 'normal'; // TODO: 실제 계산 로직 구현
+        const mostActiveGeneration = '1'; // TODO: 실제 계산 로직 구현
+        
+        return {
+            overall: {
+                totalTournaments,
+                totalParticipants,
+                averageParticipantsPerTournament,
+                mostPopularType,
+                mostActiveGeneration
+            },
+            winners: {
+                topWinners: backendResults.slice(0, 10).map((result, index) => ({
+                    pokemonId: result.winnerId || index + 1,
+                    koreanName: result.winnerKoreanName || `포켓몬 ${index + 1}`,
+                    name: result.winnerName || `pokemon-${index + 1}`,
+                    spriteUrl: result.winnerSpriteUrl || '',
+                    winCount: 1, // TODO: 실제 우승 횟수 계산
+                    winRate: 100 // TODO: 실제 승률 계산
+                })),
+                generationDistribution: [], // TODO: 세대별 분포 데이터 생성
+                typeDistribution: [] // TODO: 타입별 분포 데이터 생성
+            },
+            participants: {
+                mostPopularPokemon: backendResults.slice(0, 10).map((result, index) => ({
+                    pokemonId: result.participantId || index + 1,
+                    koreanName: result.participantKoreanName || `포켓몬 ${index + 1}`,
+                    name: result.participantName || `pokemon-${index + 1}`,
+                    spriteUrl: result.participantSpriteUrl || '',
+                    participationCount: 1, // TODO: 실제 참가 횟수 계산
+                    participationRate: 100 // TODO: 실제 참가율 계산
+                })),
+                typePreferences: [] // TODO: 타입 선호도 데이터 생성
+            },
+            timeline: {
+                monthlyActivity: [], // TODO: 월별 활동 데이터 생성
+                yearlyTrends: [] // TODO: 연별 트렌드 데이터 생성
+            }
+        };
+    };
 
     // ==== useEffect ====
 
