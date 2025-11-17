@@ -3,11 +3,9 @@ package com.pokeapi.backend.entity;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
 @Entity
 @Table(name = "world_cup_statistics")
-@Data
 public class WorldCupStatistics {
     
     @Id
@@ -31,4 +29,61 @@ public class WorldCupStatistics {
 
     @Column(name = "last_updated", nullable = false)
     private LocalDateTime lastUpdated;
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Integer getPokemonId() {
+        return pokemonId;
+    }
+
+    public void setPokemonId(Integer pokemonId) {
+        this.pokemonId = pokemonId;
+    }
+
+    public Integer getTotalParticipations() {
+        return totalParticipations;
+    }
+
+    public void setTotalParticipations(Integer totalParticipations) {
+        this.totalParticipations = totalParticipations;
+    }
+
+    public Integer getTotalWins() {
+        return totalWins;
+    }
+
+    public void setTotalWins(Integer totalWins) {
+        this.totalWins = totalWins;
+    }
+
+    public Integer getTotalTop3() {
+        return totalTop3;
+    }
+
+    public void setTotalTop3(Integer totalTop3) {
+        this.totalTop3 = totalTop3;
+    }
+
+    public Integer getAverageRank() {
+        return averageRank;
+    }
+
+    public void setAverageRank(Integer averageRank) {
+        this.averageRank = averageRank;
+    }
+
+    public LocalDateTime getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
 }

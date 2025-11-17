@@ -67,7 +67,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.32</version> <!-- 최신 버전 또는 프로젝트에 맞는 버전 명시 -->
+            <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
 
@@ -98,6 +98,9 @@
                 <configuration>
                     <source>17</source>
                     <target>17</target>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>

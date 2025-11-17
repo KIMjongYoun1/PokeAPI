@@ -3,9 +3,116 @@
 ## 개요
 PokeAPI 백엔드 개발 과정에서 발생했던 주요 문제들과 해결방법을 정리한 문서입니다.
 
-## 📝 최근 해결된 문제들 (2025년 1월)
+## 📝 최근 해결된 문제들 (2025년 11월)
 
-### WorldCup 기능 개발 중 발생한 문제들
+### 2025년 11월 17일 수정사항
+
+#### 1. Lombok 컴파일 오류 해결
+**문제**: Lombok이 getter/setter를 생성하지 못해 컴파일 오류 발생
+```
+ERROR: cannot find symbol: method getTournamentId()
+ERROR: cannot find symbol: method getTitle()
+...
+```
+
+**원인**: 
+- Lombok annotation processor가 제대로 작동하지 않음
+- Maven 컴파일러 설정 문제
+
+**해결**: 
+- 모든 엔티티와 DTO 클래스에서 `@Data` 어노테이션 제거
+- getter/setter 메서드를 수동으로 구현
+
+**수정된 파일들**:
+- `WorldCupResult.java` (entity)
+- `WorldCupStatistics.java` (entity)
+- `WorldCupResultDTO.java`
+- `WorldCupRequestDTO.java`
+- `AutoWorldCupRequestDTO.java`
+- `WorldCupRankingDTO.java`
+- `WorldCupParticipantDTO.java`
+- `WorldCupStatisticsDTO.java`
+
+#### 2. CORS 설정 오류 해결
+**문제**: 
+```
+IllegalArgumentException: When allowCredentials is true, allowedOrigins cannot contain the special value "*"
+```
+
+**원인**: 
+- `WorldCupController`에서 `@CrossOrigin(origins = "*")` 사용
+- 전역 CORS 설정(`WebConfig`)에서 `allowCredentials(true)` 사용
+- 두 설정이 충돌하여 오류 발생
+
+**해결**: 
+- `WorldCupController`에서 `@CrossOrigin` 어노테이션 제거
+- 전역 CORS 설정만 사용하도록 변경
+
+**수정된 파일**:
+- `WorldCupController.java`: `@CrossOrigin(origins = "*")` 제거
+
+#### 3. React 함수 호이스팅 오류 해결
+**문제**: 
+```
+Uncaught ReferenceError: Cannot access 'getPreviousRoundWinners' before initialization
+```
+
+**원인**: 
+- `useMemo`에서 `getPreviousRoundWinners()` 함수를 호출
+- 함수가 `useMemo` 아래에 정의되어 초기화 전 접근 오류 발생
+
+**해결**: 
+- `getPreviousRoundWinners` 함수를 `useMemo`보다 위로 이동
+- `currentRoundMatches`의 의존성 배열에 `getPreviousRoundWinners` 추가
+
+**수정된 파일**:
+- `WorldCupTournament.tsx`: 함수 정의 순서 변경
+
+#### 4. 월드컵 결과 저장 API 데이터 형식 오류 해결
+**문제**: 
+```
+POST http://localhost:8080/api/worldcup/result 400 (Bad Request)
+```
+
+**원인**: 
+- 프론트엔드에서 보내는 데이터 형식과 백엔드가 기대하는 형식 불일치
+  - `participants`: 프론트엔드는 객체 배열, 백엔드는 `List<Map<String, Object>>` 기대
+  - `finalRanking`: 프론트엔드는 객체 배열, 백엔드는 `List<Map<String, Object>>` 기대
+  - `createdAt`, `completedAt`: ISO string 형식 파싱 문제
+
+**해결**: 
+1. 프론트엔드에서 데이터 변환:
+   - `participants`를 Map 배열로 변환
+   - `finalRanking`을 Map 배열로 변환
+2. 백엔드에서 날짜 형식 처리:
+   - `@JsonFormat` 어노테이션 제거하여 ISO-8601 형식 자동 파싱 허용
+
+**수정된 파일**:
+- `WorldCupTournament.tsx`: 데이터 변환 로직 추가
+- `WorldCupResultDTO.java`: `@JsonFormat` 제거
+
+#### 5. 로그 파일 설정 활성화
+**문제**: 로그 파일이 생성되지 않음
+
+**원인**: 
+- `application.properties`에서 로그 파일 설정이 주석 처리되어 있음
+
+**해결**: 
+- 로그 파일 설정 주석 해제 및 활성화
+
+**수정된 설정**:
+```properties
+# 파일 로깅 설정
+logging.file.name=logs/pokeapi.log
+logging.file.max-size=10MB
+logging.file.max-history=30
+logging.file.total-size-cap=300MB
+```
+
+**수정된 파일**:
+- `application.properties`: 로그 파일 설정 활성화
+
+### WorldCup 기능 개발 중 발생한 문제들 (2025년 1월)
 
 #### 1. 메서드 시그니처 불일치 문제
 **문제**: `updatePokemonStatistics` 메서드 호출과 정의가 불일치

@@ -62,6 +62,23 @@ const WorldCupTournament = ({
     const [isAnimating, setIsAnimating] = useState(false);  // 애니메이션 진행 여부
     const [showWinner, setShowWinner] = useState(false);    // 승자 표시 여부
 
+    // ==== 유틸리티 함수들 ====
+    
+    // 이전 라운드 승자들 가져오기 (useMemo보다 먼저 정의)
+    const getPreviousRoundWinners = useCallback((): WorldCupParticipant[] => {
+        const previousRound = currentRound - 1;
+        const winners: WorldCupParticipant[] = [];
+
+        // 이전 라운드의 모든 매치 결과에서 승자 찾기
+        for (const [matchId, winnerId] of matchResults) {
+            if (matchId.startsWith(`round-${previousRound}-`)) {
+                const winner = participants.find(p => p.id === winnerId);
+                if (winner) winners.push(winner);
+            }
+        }
+        return winners.sort((a, b) => a.id - b.id);  // ID 순으로 정렬하여 일관성 유지
+    }, [currentRound, matchResults, participants]);
+
     // === 계산된 값들(useMemo) ====
 
     // 전체 라운드 수 계산 (참여자 수에 따라 다름)
@@ -115,24 +132,7 @@ const WorldCupTournament = ({
             }
         }
         return matches;
-    }, [participants, currentRound, phase, matchResults]);
-
-    // ==== 유틸리티 함수들 ====
-    
-    // 이전 라운드 승자들 가져오기
-    const getPreviousRoundWinners = useCallback((): WorldCupParticipant[] => {
-        const previousRound = currentRound - 1;
-        const winners: WorldCupParticipant[] = [];
-
-        // 이전 라운드의 모든 매치 결과에서 승자 찾기
-        for (const [matchId, winnerId] of matchResults) {
-            if (matchId.startsWith(`round-${previousRound}-`)) {
-                const winner = participants.find(p => p.id === winnerId);
-                if (winner) winners.push(winner);
-            }
-        }
-        return winners.sort((a, b) => a.id - b.id);  // ID 순으로 정렬하여 일관성 유지
-    }, [currentRound, matchResults, participants]);
+    }, [participants, currentRound, phase, matchResults, getPreviousRoundWinners]);
 
     // 현재 매치 가져오기
     const getCurrentMatch = useCallback((): CurrentMatch | null => {
@@ -212,6 +212,24 @@ const WorldCupTournament = ({
             // 최종 순위 생성 (수정: getFinalRanking → generateFinalRanking)
             const finalRanking = generateFinalRanking();
 
+            // 백엔드 형식에 맞게 데이터 변환
+            // participants를 Map 배열로 변환
+            const participantsAsMaps = participants.map(p => ({
+                id: p.id,
+                name: p.name,
+                koreanName: p.koreanName,
+                types: p.types,
+                spriteUrl: p.spriteUrl,
+                description: p.description,
+                generation: p.generation,
+            }));
+
+            // finalRanking을 Map 배열로 변환
+            const finalRankingAsMaps = finalRanking.map(r => ({
+                id: r.id,
+                rank: r.rank,
+            }));
+
             // 월드컵 결과 생성
             const result: WorldCupResult = {
                 tournamentId: generateTournamentId(),
@@ -222,8 +240,8 @@ const WorldCupTournament = ({
                 winnerName: finalWinner.name,
                 winnerKoreanName: finalWinner.koreanName,
                 winnerSpriteUrl: finalWinner.spriteUrl,
-                participants: participants,
-                finalRanking: finalRanking,
+                participants: participantsAsMaps as any,  // 백엔드가 Map<String, Object>[]를 기대
+                finalRanking: finalRankingAsMaps as any,  // 백엔드가 Map<String, Object>[]를 기대
                 conditions: {
                     participantCount: participants.length,  // 수정: participants → participantCount
                     generation: worldCupRequest.generation,

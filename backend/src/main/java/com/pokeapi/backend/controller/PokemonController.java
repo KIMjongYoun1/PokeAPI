@@ -28,8 +28,9 @@ public class PokemonController {
 
     private static final Logger logger = LoggerFactory.getLogger(PokemonController.class);
     
-    // 포켓몬 이름 유효성 검사를 위한 정규식 (영문자, 숫자, 하이픈만 허용)
-    private static final Pattern POKEMON_NAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9-]+$");
+    // 포켓몬 이름 유효성 검사를 위한 정규식 (한글, 영문자, 숫자, 하이픈, 괄호 허용)
+    // 괄호는 성별 표시(수컷/암컷) 등에 사용됨
+    private static final Pattern POKEMON_NAME_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9-()]+$");
     
     // 타입 유효성 검사를 위한 정규식 (영문자만 허용)
     private static final Pattern TYPE_PATTERN = Pattern.compile("^[가-힣a-zA-Z0-9-]+$");
